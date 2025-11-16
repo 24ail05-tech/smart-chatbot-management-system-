@@ -9,7 +9,7 @@ import { Server } from "socket.io";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import helmet from "helmet";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Joi from "joi";
 import morgan from "morgan";
