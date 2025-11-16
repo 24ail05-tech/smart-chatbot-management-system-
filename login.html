@@ -1,8 +1,10 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nandha Chatbot Management System</title>  <style>
+  <title>Nandha Chatbot Management System</title>
+  <style>
     body {
       margin: 0;
       font-family: "Poppins", sans-serif;
@@ -124,41 +126,82 @@
     #auth-section {
       display: block;
     }
-  </style></head>
+
+    #signupFields {
+      display: none;
+    }
+  </style>
+</head>
 <body>
   <div class="feather"></div>
   <div class="feather"></div>
   <div class="feather"></div>
   <div class="feather"></div>
-  <div class="feather"></div>  <div class="container">
+  <div class="feather"></div>
+
+  <div class="container">
     <h1>Nandha Chatbot Management System</h1>
-    <p class="tagline">Your academic assistant, powered by smart course‑aware AI</p><section id="auth-section">
-  <input type="text" id="authName" placeholder="Full Name (for signup)">
-  <input type="email" id="authEmail" placeholder="Email">
-  <input type="password" id="authPassword" placeholder="Password">
-  <button id="loginBtn">Login</button>
-  <button id="signupBtn">Sign Up</button>
-  <p><a id="forgotLink">Forgot Password?</a></p>
-  <p id="authMsg" class="feedback-msg"></p>
-</section>
+    <p class="tagline">Your academic assistant, powered by smart course‑aware AI</p>
 
-<section id="forgot-section">
-  <h2>Forgot Password</h2>
-  <input type="email" id="fpEmail" placeholder="Registered Email">
-  <button id="sendTokenBtn">Send Reset Token</button>
-  <p id="fpMsg"></p>
-  <p><a id="backToAuth">Back</a></p>
-</section>
+    <section id="auth-section">
+      <div id="signupFields">
+        <input type="text" id="authName" placeholder="Full Name">
+      </div>
+      <input type="email" id="authEmail" placeholder="Email">
+      <input type="password" id="authPassword" placeholder="Password">
 
-<section id="reset-section">
-  <h2>Reset Password</h2>
-  <input type="text" id="resetToken" placeholder="Enter token">
-  <input type="password" id="newPassword" placeholder="New Password">
-  <input type="password" id="confirmPassword" placeholder="Confirm Password">
-  <button id="resetBtn">Reset Password</button>
-  <p id="resetMsg"></p>
-</section>
+      <button id="loginBtn">Login</button>
+      <button id="signupBtn">Sign Up</button>
 
+      <p><a id="forgotLink">Forgot Password?</a></p>
+      <p id="authMsg" class="feedback-msg"></p>
+
+      <p id="toggleSignupMsg">New user? <a id="showSignup">Sign Up</a></p>
+      <p id="toggleLoginMsg" style="display:none;">Already have an account? <a id="showLogin">Login</a></p>
+    </section>
+
+    <section id="forgot-section">
+      <h2>Forgot Password</h2>
+      <input type="email" id="fpEmail" placeholder="Registered Email">
+      <button id="sendTokenBtn">Send Reset Token</button>
+      <p id="fpMsg"></p>
+      <p><a id="backToAuth">Back</a></p>
+    </section>
+
+    <section id="reset-section">
+      <h2>Reset Password</h2>
+      <input type="text" id="resetToken" placeholder="Enter token">
+      <input type="password" id="newPassword" placeholder="New Password">
+      <input type="password" id="confirmPassword" placeholder="Confirm Password">
+      <button id="resetBtn">Reset Password</button>
+      <p id="resetMsg"></p>
+    </section>
   </div>
+
+  <script src="auth.js"></script>
+  <script>
+    // Toggle between login & signup views
+    const signupFields = document.getElementById("signupFields");
+    const showSignup = document.getElementById("showSignup");
+    const showLogin = document.getElementById("showLogin");
+    const toggleSignupMsg = document.getElementById("toggleSignupMsg");
+    const toggleLoginMsg = document.getElementById("toggleLoginMsg");
+
+    showSignup.addEventListener("click", () => {
+      signupFields.style.display = "block";
+      loginBtn.style.display = "none";
+      signupBtn.style.display = "block";
+      toggleSignupMsg.style.display = "none";
+      toggleLoginMsg.style.display = "block";
+    });
+
+    showLogin.addEventListener("click", () => {
+      signupFields.style.display = "none";
+      loginBtn.style.display = "block";
+      signupBtn.style.display = "none";
+      toggleSignupMsg.style.display = "block";
+      toggleLoginMsg.style.display = "none";
+    });
+  </script>
 </body>
 </html>
