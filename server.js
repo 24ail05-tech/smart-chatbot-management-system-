@@ -1,4 +1,4 @@
-// server.js — Full Student Chatbot Backend (complete)
+// server.js — Full Student Chatbot Backend (final merged + enhancements)
 // ES module style
 import express from "express";
 import mongoose from "mongoose";
@@ -109,6 +109,7 @@ const studentSchema = new Schema(
     name: String,
     dept: String,
     cls: String,
+    email: { type: String, default: "" },
     passwordHash: { type: String, default: null },
     role: { type: String, enum: ["student", "admin"], default: "student" },
     avatarUrl: { type: String, default: "" },
@@ -120,6 +121,7 @@ const studentSchema = new Schema(
       theme: { type: String, enum: ["light", "dark"], default: "light" },
       notifications: { type: Boolean, default: true },
       safeMode: { type: Boolean, default: true },
+      fontSize: { type: String, enum: ["small", "medium", "large"], default: "medium" },
     },
     refreshTokens: [
       {
@@ -173,6 +175,31 @@ const lockSchema = new Schema(
   { timestamps: true }
 );
 const Lock = mongoose.model("Lock", lockSchema);
+
+// Notices model
+const noticeSchema = new Schema(
+  {
+    title: String,
+    body: String,
+    createdBy: String,
+    urgent: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+const Notice = mongoose.model("Notice", noticeSchema);
+
+// Appeals model
+const appealSchema = new Schema(
+  {
+    roll: { type: String, index: true },
+    lockId: { type: Schema.Types.ObjectId, ref: "Lock", default: null },
+    message: String,
+    status: { type: String, enum: ["open", "in-review", "closed"], default: "open" },
+    adminResponse: { type: String, default: "" },
+  },
+  { timestamps: true }
+);
+const Appeal = mongoose.model("Appeal", appealSchema);
 
 // ---------------------- JWT helpers ----------------------
 function signAccessToken(student) {
@@ -376,12 +403,10 @@ app.get("/api/csrf-token", (req, res) => {
   res.json({ csrfToken: token });
 });
 
-// ---------------------- Routes ----------------------
-
-// Health
+// ---------------------- Health & Auth ----------------------
 app.get("/api/health", (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-// Auth: register (CSRF optional for register; we allow because frontend can get token first)
+// Auth: register
 app.post("/api/auth/register", csrfProtect, async (req, res) => {
   try {
     const { error, value } = registerSchema.validate(req.body);
@@ -613,6 +638,7 @@ app.patch("/api/me/settings", authenticate, csrfProtect, async (req, res) => {
       theme: Joi.string().valid("light", "dark").optional(),
       notifications: Joi.boolean().optional(),
       safeMode: Joi.boolean().optional(),
+      fontSize: Joi.string().valid("small", "medium", "large").optional(),
     });
     const { error, value } = schema.validate(req.body);
     if (error) return res.status(400).json({ error: error.message });
@@ -861,6 +887,136 @@ app.post("/api/ops/global-lock", requireAdminApiKey, async (req, res) => {
   }
 });
 
+// ---------------------- Notices & Appeals ----------------------
+// List public notices (students)
+app.get("/api/notices", authenticate, csrfProtect, async (req, res) => {
+  try {
+    const notices = await Notice.find().sort({ createdAt: -1 }).limit(50);
+    res.json(notices);
+  } catch (err) {
+    console.error("get notices error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: create notice
+app.post("/api/admin/notice", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const schema = Joi.object({ title: Joi.string().required(), body: Joi.string().required(), urgent: Joi.boolean().optional() });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.message });
+
+    const n = new Notice({ title: value.title, body: value.body, createdBy: req.student.roll || "admin", urgent: !!value.urgent });
+    await n.save();
+    io.emit("notice:new", n);
+    res.json({ ok: true, notice: n });
+  } catch (err) {
+    console.error("create notice error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Student: submit appeal for lock
+app.post("/api/user/appeal", authenticate, csrfProtect, async (req, res) => {
+  try {
+    const schema = Joi.object({ lockId: Joi.string().optional().allow(null), message: Joi.string().max(2000).required() });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.message });
+
+    // rate limit appeals per user via Redis to prevent spam
+    if (redis) {
+      const key = `appeal-rate:${req.student.roll}`;
+      const { count } = await redisRateLimitKeyIncrement(key, 60 * 60); // 1 hour window
+      if (count > 5) return res.status(429).json({ error: "Too many appeals, try later" });
+    }
+
+    const appeal = new Appeal({ roll: req.student.roll, lockId: value.lockId || null, message: value.message });
+    await appeal.save();
+    io.emit("appeal:new", { roll: req.student.roll, id: appeal._id, message: appeal.message });
+    res.status(201).json({ ok: true, appealId: appeal._id });
+  } catch (err) {
+    console.error("appeal error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: list appeals
+app.get("/api/admin/appeals", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const appeals = await Appeal.find().sort({ createdAt: -1 }).limit(500);
+    res.json(appeals);
+  } catch (err) {
+    console.error("list appeals error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: respond to appeal & optionally unlock
+app.post("/api/admin/appeals/:id/respond", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const schema = Joi.object({ action: Joi.string().valid("close", "review", "unlock").required(), response: Joi.string().optional().allow("") });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.message });
+
+    const appeal = await Appeal.findById(req.params.id);
+    if (!appeal) return res.status(404).json({ error: "Appeal not found" });
+
+    if (value.action === "unlock") {
+      // unlock the account referenced by appeal.roll
+      await Student.updateOne({ roll: appeal.roll }, { $set: { lockedUntil: null, warningsCount: 0 } });
+      if (redis) await clearAccountLockRedis(appeal.roll);
+      io.emit("student:unlocked", { roll: appeal.roll, by: req.student.roll });
+    }
+
+    appeal.status = value.action === "close" ? "closed" : value.action === "review" ? "in-review" : appeal.status;
+    appeal.adminResponse = value.response || "";
+    await appeal.save();
+    res.json({ ok: true, appeal });
+  } catch (err) {
+    console.error("respond appeal error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ---------------------- Avatar upload (optional: multer) ----------------------
+// Implement avatar upload endpoint. Use multer if available; fallback to base64 field.
+let multer;
+try {
+  multer = (await import("multer")).default;
+} catch (e) {
+  multer = null;
+  console.warn("Multer not installed — avatar upload endpoint will accept base64 in body only. Install multer for multipart uploads.");
+}
+
+if (multer) {
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } }); // 2MB limit
+  app.post("/api/student/avatar", authenticate, csrfProtect, upload.single("avatar"), async (req, res) => {
+    try {
+      if (!req.file || !req.student) return res.status(400).json({ error: "No file uploaded" });
+      // Save as data URL in DB (simple). You can optionally upload to Cloudinary instead.
+      const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+      await Student.updateOne({ roll: req.student.roll }, { $set: { avatarUrl: base64 } });
+      res.json({ ok: true, avatarUrl: base64 });
+    } catch (err) {
+      console.error("avatar upload error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+} else {
+  // fallback endpoint: accept JSON { avatarBase64: "data:..." }
+  app.post("/api/student/avatar", authenticate, csrfProtect, async (req, res) => {
+    try {
+      const { avatarBase64 } = req.body;
+      if (!avatarBase64) return res.status(400).json({ error: "Missing avatarBase64" });
+      await Student.updateOne({ roll: req.student.roll }, { $set: { avatarUrl: avatarBase64 } });
+      res.json({ ok: true, avatarUrl: avatarBase64 });
+    } catch (err) {
+      console.error("avatar upload fallback error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+}
+
 // ---------------------- Gemini integration ----------------------
 async function callGemini(prompt, opts = {}) {
   if (!GEMINI_API_URL) throw new Error("Gemini API URL not configured");
@@ -908,6 +1064,51 @@ app.post("/api/gemini", authenticate, csrfProtect, async (req, res) => {
   }
 });
 
+// ---------------------- Dashboard status endpoint ----------------------
+app.get("/api/dashboard/status", authenticate, csrfProtect, async (req, res) => {
+  try {
+    const roll = req.student.roll;
+
+    const student = await Student.findOne({ roll }).select("-passwordHash -refreshTokens").lean();
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    const warnings = await Warning.find({ roll }).sort({ createdAt: -1 }).limit(50).lean();
+    const locks = await Lock.find({ roll }).sort({ createdAt: -1 }).limit(10).lean();
+
+    let activeLock = null;
+    // prefer latest non-expired lock
+    for (const l of locks) {
+      if (!l.expiresAt || new Date(l.expiresAt) > new Date()) {
+        activeLock = l;
+        break;
+      }
+    }
+
+    // check redis lock
+    const redisLock = await getAccountLockRedis(roll);
+    if (!activeLock && redisLock) {
+      activeLock = { reason: redisLock, source: "redis", expiresAt: null };
+    }
+
+    const totalChats = await ChatHistory.countDocuments({ roll });
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+    const weeklyChats = await ChatHistory.countDocuments({ roll, createdAt: { $gte: weekAgo } });
+    const lastChat = await ChatHistory.findOne({ roll }).sort({ createdAt: -1 }).lean();
+    const notices = await Notice.find().sort({ createdAt: -1 }).limit(20).lean();
+
+    res.json({
+      profile: student,
+      warnings,
+      activeLock,
+      usage: { totalChats, weeklyChats, lastChat: lastChat ? lastChat.createdAt : null },
+      notices,
+    });
+  } catch (err) {
+    console.error("dashboard status error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // ---------------------- Error handling ----------------------
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
@@ -923,3 +1124,5 @@ server.listen(PORT, () => {
   if (!ADMIN_API_KEY) console.warn("⚠️ ADMIN_API_KEY not set — admin-key routes disabled.");
   if (!REDIS_URL) console.warn("⚠️ REDIS_URL not set — Redis-backed features disabled.");
 });
+
+   
