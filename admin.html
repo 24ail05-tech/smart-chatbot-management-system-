@@ -236,8 +236,8 @@ function showSection(id) {
 // LOGOUT SECURELY
 function logout() {
     fetch("/api/admin/logout", { method: "POST", credentials: "include" })
-        .then(() => window.location.href = "/login.html")
-        .catch(() => window.location.href = "/login.html");
+        .then(() => window.location.href = "/index.html")
+        .catch(() => window.location.href = "/index.html");
 }
 
 // CONNECT BUTTONS TO admin.js
