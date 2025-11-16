@@ -1,106 +1,564 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nandha Chatbot — Student</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Nandha Chatbot — Dashboard</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-    body {
-        margin: 0;
-        font-family: "Poppins", sans-serif;
-        background: linear-gradient(135deg, #0077ff, #00d4ff);
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        color: #fff;
-        overflow: hidden;
-        transition: background 0.5s ease;
-    }
+  :root{
+    --glass: rgba(255,255,255,0.12);
+    --glass-2: rgba(255,255,255,0.08);
+    --accent: #0077ff;
+    --accent-2: #00d4ff;
+    --success: #28a745;
+    --danger: #ff4d4f;
+    --muted: rgba(255,255,255,0.85);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg,var(--accent),var(--accent-2));
+    min-height:100vh;
+    color:#fff;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
 
-    h1 { margin-top: 20px; }
+  .wrap{
+    width:100%;
+    max-width:1100px;
+    margin:28px auto;
+    padding:18px;
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    gap:18px;
+  }
 
-    /* Profile Form */
-    #profileForm, #chatContainer {
-        width: 90%;
-        max-width: 500px;
-        background: rgba(255,255,255,0.1);
-        padding: 20px;
-        border-radius: 15px;
-        margin-top: 20px;
-        backdrop-filter: blur(8px);
-        display: none;
-    }
+  /* Top controls on smaller screens collapse */
+  header.topbar{
+    grid-column: 1 / -1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .brand{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .brand h1{font-size:20px;margin:0}
+  .top-actions{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .icon-btn{
+    background:var(--glass);
+    border-radius:10px;
+    width:44px;height:44px;
+    display:grid;place-items:center;
+    cursor:pointer;border:none;color:#fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  }
 
-    #profileForm.active, #chatContainer.active { display: block; }
+  /* LEFT COLUMN - Profile card */
+  .card{
+    background:var(--glass);
+    padding:18px;
+    border-radius:14px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  }
+  .profile-top{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .avatar {
+    width:84px;height:84px;border-radius:999px;
+    overflow:hidden;border:3px solid rgba(255,255,255,0.12);
+    background:linear-gradient(135deg,#fff2,#fff0);
+    display:grid;place-items:center;font-weight:700;color:#000;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .avatar input{display:none}
 
-    input, select {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        margin: 8px 0;
-        font-size: 15px;
-    }
+  .profile-meta h2{margin:0;font-size:18px}
+  .profile-meta p{margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.9)}
+  .muted{opacity:0.9}
 
-    button {
-        width: 100%;
-        padding: 12px;
-        margin-top: 10px;
-        border: none;
-        border-radius: 8px;
-        background: #3b82f6;
-        font-weight: 600;
-        cursor: pointer;
-        color: white;
-        transition: 0.3s;
-    }
+  .profile-actions{margin-top:12px;display:flex;gap:8px}
+  .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);color:#fff}
 
-    button:hover { background: #60a5fa; }
+  .small {font-size:13px;padding:8px 10px;border-radius:8px}
 
-    /* Chat Area */
-    #chatBox {
-        height: 300px;
-        overflow-y: auto;
-        background: rgba(0,0,0,0.2);
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-    }
+  /* MIDDLE & RIGHT column */
+  .right-col{
+    display:grid;
+    grid-template-rows: auto 1fr;
+    gap:12px;
+  }
 
-    .msg { margin: 5px 0; padding: 5px 10px; border-radius: 8px; max-width: 80%; }
-    .studentMsg { background: rgba(255,255,255,0.6); color: #000; align-self: flex-end; }
-    .botMsg { background: rgba(0,0,0,0.5); color: #fff; align-self: flex-start; }
+  /* Status Panel (middle area) */
+  .status-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+
+  .status-card{
+    background:var(--glass-2);
+    padding:14px;border-radius:12px;
+    min-height:86px;
+  }
+  .status-card h3{margin:0 0 8px;font-size:14px}
+  .status-row{display:flex;justify-content:space-between;align-items:center}
+
+  .warn-list{margin:8px 0;padding:8px;max-height:130px;overflow:auto;border-radius:8px;background:rgba(0,0,0,0.15)}
+
+  .notice{
+    background:linear-gradient(90deg,#ffd966,#ffb366);
+    color:#000;padding:10px;border-radius:10px;font-weight:600;margin-bottom:8px;
+  }
+
+  /* Chat summary and Open Chat button */
+  .summary{
+    display:flex;
+    gap:12px;align-items:center;justify-content:space-between;
+  }
+  .summary .stat{background:rgba(255,255,255,0.06);padding:10px;border-radius:10px;min-width:110px;text-align:center}
+  .open-chat{margin-top:12px}
+
+  /* Responsive */
+  @media (max-width:980px){
+    .wrap{grid-template-columns: 1fr; padding:12px}
+    .status-grid{grid-template-columns: 1fr}
+    .right-col{grid-auto-rows:auto}
+    header.topbar{flex-direction:column;align-items:flex-start;gap:8px}
+  }
 </style>
 </head>
+
 <body>
+  <div class="wrap" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <img src="" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover;display:none" id="collegeLogo">
+        <h1>Nandha Chatbot</h1>
+      </div>
+      <div class="top-actions">
+        <div title="Settings" class="icon-btn" id="settingsBtn">⚙️</div>
+        <div title="Logout" class="icon-btn" id="logoutBtn">⎋</div>
+      </div>
+    </header>
 
-<h1>Nandha Chatbot</h1>
+    <!-- LEFT: profile card -->
+    <aside>
+      <div class="card" id="profileCard">
+        <div class="profile-top">
+          <label class="avatar" id="avatarBtn" title="Change profile picture">
+            <img id="avatarImg" src="" alt="avatar" />
+            <input type="file" id="avatarFile" accept="image/*" />
+          </label>
 
-<!-- Profile Form -->
-<div id="profileForm" class="active">
-    <h2>Fill Your Profile</h2>
-    <input type="text" id="stuName" placeholder="Full Name">
-    <input type="email" id="stuEmail" placeholder="Email">
-    <select id="stuDept">
-        <option value="">Select Department</option>
-        <option value="CSE">CSE</option>
-        <option value="ECE">ECE</option>
-        <option value="MECH">MECH</option>
-    </select>
-    <input type="text" id="stuClass" placeholder="Class / Semester">
-    <button onclick="saveProfile()">Save Profile</button>
-</div>
+          <div class="profile-meta">
+            <h2 id="displayName">Loading...</h2>
+            <p id="displayEmail" class="muted">email@example.com</p>
+            <p id="displayRoll" class="muted" style="font-size:13px">Roll: —</p>
+            <p id="displayDept" class="muted" style="font-size:13px">Dept: —</p>
+          </div>
+        </div>
 
-<!-- Chat Container -->
-<div id="chatContainer">
-    <div id="chatBox" class="flex flex-col"></div>
-    <input type="text" id="chatInput" placeholder="Type your question...">
-    <button onclick="sendMessage()">Send</button>
-</div>
+        <div class="profile-actions">
+          <button class="btn primary" id="editProfileBtn">Edit Profile</button>
+          <button class="btn ghost small" id="openChatBtn">Open Chat</button>
+        </div>
 
-<script src="chatbot.js"></script>
+        <div style="margin-top:12px;font-size:13px;color:rgba(255,255,255,0.9)">
+          <div>Last login: <span id="lastLogin">—</span></div>
+          <div>Profile completeness: <strong id="profilePct">—</strong></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: middle area (status panels) -->
+    <main class="right-col">
+
+      <!-- top row: warnings & lock -->
+      <div class="status-grid">
+        <div class="status-card" id="warningsCard">
+          <h3>Warnings</h3>
+          <div id="warningsContainer" class="warn-list">
+            <!-- dynamic list -->
+            <div id="noWarnings" class="muted">Loading warnings…</div>
+          </div>
+        </div>
+
+        <div class="status-card" id="lockCard">
+          <h3>Account / Chat Lock Status</h3>
+          <div id="lockStatus" class="status-row">
+            <div><strong id="lockState">Loading…</strong></div>
+            <div id="lockReason" class="muted" style="font-size:13px"></div>
+          </div>
+          <div style="margin-top:10px" id="lockMeta"></div>
+        </div>
+      </div>
+
+      <!-- second row: notices + summary + open chat -->
+      <div style="display:flex;gap:12px;flex-direction:column">
+        <div class="status-card" id="noticesCard">
+          <h3>Notices</h3>
+          <div id="noticesList" class="muted">Loading notices…</div>
+        </div>
+
+        <div class="status-card">
+          <h3>Chat Usage Summary</h3>
+          <div class="summary">
+            <div class="stat">
+              <div style="font-size:22px" id="totalChats">—</div>
+              <div style="font-size:12px;opacity:0.9">Total Chats</div>
+            </div>
+            <div class="stat">
+              <div style="font-size:22px" id="weeklyChats">—</div>
+              <div style="font-size:12px;opacity:0.9">This Week</div>
+            </div>
+            <div class="stat">
+              <div style="font-size:22px" id="lastChat">—</div>
+              <div style="font-size:12px;opacity:0.9">Last Chat</div>
+            </div>
+          </div>
+
+          <div class="open-chat">
+            <button class="btn primary" id="openChatBtn2">Open Chat</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Optional: socket.io client (will try to connect for realtime updates) -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    // ---------- CONFIG ----------
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
+    if (!token) {
+      // not logged in — go to login
+      setTimeout(()=> location.href = 'login.html', 400);
+      throw new Error('Not authenticated');
+    }
+
+    // Helper: decode JWT to get roll in payload 'sub'
+    function parseJwt(t) {
+      try {
+        const p = t.split('.')[1];
+        const decoded = JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/')));
+        return decoded;
+      } catch (e) { return null; }
+    }
+    const jwtPayload = parseJwt(token);
+    const userRoll = jwtPayload?.sub || jwtPayload?.roll || null;
+
+    // Base headers
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+    }
+
+    // ---------- DOM ----------
+    const displayName = document.getElementById('displayName');
+    const displayEmail = document.getElementById('displayEmail');
+    const displayRoll = document.getElementById('displayRoll');
+    const displayDept = document.getElementById('displayDept');
+    const avatarImg = document.getElementById('avatarImg');
+    const avatarFile = document.getElementById('avatarFile');
+    const avatarBtn = document.getElementById('avatarBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const openChatBtn = document.getElementById('openChatBtn');
+    const openChatBtn2 = document.getElementById('openChatBtn2');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+
+    const warningsContainer = document.getElementById('warningsContainer');
+    const lockState = document.getElementById('lockState');
+    const lockReason = document.getElementById('lockReason');
+    const lockMeta = document.getElementById('lockMeta');
+    const noticesList = document.getElementById('noticesList');
+
+    const totalChatsEl = document.getElementById('totalChats');
+    const weeklyChatsEl = document.getElementById('weeklyChats');
+    const lastChatEl = document.getElementById('lastChat');
+    const lastLoginEl = document.getElementById('lastLogin');
+    const profilePct = document.getElementById('profilePct');
+
+    // ---------- UTILS ----------
+    function showLocalAvatar() {
+      const stored = localStorage.getItem('avatarData');
+      if (stored) {
+        avatarImg.src = stored;
+      } else {
+        // fallback initials
+        const initials = (displayName.textContent || 'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+        // small placeholder via data URL
+        avatarImg.src = `data:image/svg+xml;utf8,
+          <svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
+            <rect fill='%23ffffff' width='100%' height='100%' rx='100'/>
+            <text x='50%' y='54%' font-size='72' text-anchor='middle' fill='%23000' font-family='Poppins'>${initials}</text>
+          </svg>`;
+      }
+    }
+
+    // ---------- API CALLS ----------
+    async function fetchProfile() {
+      try {
+        if (!userRoll) throw new Error('No roll in token');
+        const res = await fetch(`/api/student/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
+        if (!res.ok) throw res;
+        const data = await res.json();
+        // data is student object
+        displayName.textContent = data.name || data.roll || 'Unnamed';
+        displayEmail.textContent = data.email || '—';
+        displayRoll.textContent = 'Roll: ' + (data.roll || '—');
+        displayDept.textContent = 'Dept: ' + (data.dept || '—');
+        lastLoginEl.textContent = new Date(data.updatedAt || data.createdAt || Date.now()).toLocaleString();
+        // warnings and lock info from student object
+        profilePct.textContent = calculateProfilePct(data) + '%';
+
+        // avatarUrl if provided by backend
+        if (data.avatarUrl) {
+          avatarImg.src = data.avatarUrl;
+          localStorage.setItem('avatarData', data.avatarUrl);
+        } else {
+          showLocalAvatar();
+        }
+
+        // lock status displayed too
+        if (data.lockedUntil) {
+          const until = new Date(data.lockedUntil);
+          if (until > new Date()) {
+            lockState.textContent = 'Locked';
+            lockState.style.color = 'var(--danger)';
+            lockReason.textContent = `Until ${until.toLocaleString()}`;
+            lockMeta.innerHTML = `<div>Locked by system/admin. Penalties may apply.</div>`;
+          } else {
+            lockState.textContent = 'Unlocked';
+            lockState.style.color = 'var(--success)';
+            lockReason.textContent = '';
+            lockMeta.innerHTML = '';
+          }
+        } else {
+          lockState.textContent = 'Unlocked';
+          lockState.style.color = 'var(--success)';
+          lockReason.textContent = '';
+          lockMeta.innerHTML = '';
+        }
+
+        // warnings count
+        renderWarningsFromProfile(data);
+      } catch (err) {
+        console.error('fetchProfile error', err);
+      }
+    }
+
+    async function fetchChatHistoryAndUsage() {
+      try {
+        const res = await fetch(`/api/chat/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
+        if (!res.ok) {
+          // 403/401 or other
+          totalChatsEl.textContent = '—';
+          weeklyChatsEl.textContent = '—';
+          lastChatEl.textContent = '—';
+          return;
+        }
+        const history = await res.json();
+        // compute stats
+        const total = history.length;
+        const oneWeekAgo = Date.now() - 7*24*3600*1000;
+        const weekly = history.filter(h => new Date(h.createdAt || h._id?.getTimestamp?.() || h.time || Date.now()) > oneWeekAgo).length;
+        const last = history[0] ? new Date(history[0].createdAt || history[0].time || Date.now()).toLocaleString() : '—';
+        totalChatsEl.textContent = total;
+        weeklyChatsEl.textContent = weekly;
+        lastChatEl.textContent = last;
+      } catch (err) {
+        console.error('fetchChatHistory error', err);
+      }
+    }
+
+    // Try to fetch notices (optional endpoint). If not available, show a default message.
+    async function fetchNotices() {
+      try {
+        const res = await fetch('/api/notices', { headers: authHeaders() });
+        if (!res.ok) {
+          noticesList.textContent = 'No notices at the moment.';
+          return;
+        }
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          noticesList.textContent = 'No notices at the moment.';
+          return;
+        }
+        noticesList.innerHTML = '';
+        data.slice(0,5).forEach(n => {
+          const el = document.createElement('div');
+          el.className = 'notice';
+          el.textContent = n.title ? `${n.title} — ${n.body || ''}` : (n.body || '');
+          noticesList.appendChild(el);
+        });
+      } catch (err) {
+        // endpoint absent or network error
+        noticesList.textContent = 'No notices at the moment.';
+      }
+    }
+
+    // Warnings: server may not expose detailed warnings for student role.
+    // We will try /api/admin/warnings/:roll (might 403) — if blocked, use warningsCount from profile
+    async function fetchWarnings() {
+      try {
+        const res = await fetch(`/api/admin/warnings/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
+        if (!res.ok) {
+          // fallback to student summary (already rendered from profile)
+          return;
+        }
+        const data = await res.json();
+        renderWarningsList(data);
+      } catch (err) {
+        console.warn('fetchWarnings fallback', err);
+      }
+    }
+
+    function renderWarningsList(list) {
+      warningsContainer.innerHTML = '';
+      if (!Array.isArray(list) || list.length === 0) {
+        warningsContainer.innerHTML = '<div class="muted">You have no warnings.</div>';
+        return;
+      }
+      list.forEach(w => {
+        const d = document.createElement('div');
+        d.style.padding = '8px';
+        d.style.borderBottom = '1px dashed rgba(255,255,255,0.06)';
+        d.innerHTML = `<strong style="color:${w.level==='high'?'#ffb4b4':'#ffd480'}">${w.level.toUpperCase()}</strong> — ${w.reason} <div style="font-size:12px;color:rgba(255,255,255,0.75)">${new Date(w.createdAt).toLocaleString()}</div>`;
+        warningsContainer.appendChild(d);
+      });
+    }
+
+    function renderWarningsFromProfile(profile) {
+      warningsContainer.innerHTML = '';
+      const c = profile.warningsCount || 0;
+      if (c === 0) {
+        warningsContainer.innerHTML = '<div class="muted">You have no warnings.</div>';
+        return;
+      }
+      const d = document.createElement('div');
+      d.style.padding = '8px';
+      d.innerHTML = `<strong style="color:var(--danger)">You have ${c} warning(s)</strong><div style="font-size:12px;color:rgba(255,255,255,0.8)">Contact admin for details.</div>`;
+      warningsContainer.appendChild(d);
+    }
+
+    function calculateProfilePct(data) {
+      const fields = ['name','email','roll','dept','cls','avatarUrl'];
+      let filled = 0;
+      fields.forEach(f=> { if (data[f]) filled++; });
+      return Math.round((filled / fields.length) * 100);
+    }
+
+    // ---------- Avatar upload ----------
+    avatarFile.addEventListener('change', async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result;
+        avatarImg.src = dataUrl;
+        localStorage.setItem('avatarData', dataUrl);
+
+        // Try to save to backend (best-effort). Server may not accept this field; if not, ignore error.
+        try {
+          // We'll call POST /api/student with existing fields to update avatarUrl (if server supports it)
+          const profileRes = await fetch(`/api/student`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ roll: userRoll, name: displayName.textContent, dept: displayDept.textContent.replace('Dept: ','') || '', cls: '' , avatarUrl: dataUrl })
+          });
+          if (profileRes.ok) {
+            console.log('avatar saved to server (if supported)');
+          }
+        } catch (err) {
+          console.warn('avatar upload to server failed (fine):', err);
+        }
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // ---------- Buttons ----------
+    openChatBtn.addEventListener('click', ()=> location.href = 'chatbot.html');
+    openChatBtn2.addEventListener('click', ()=> location.href = 'chatbot.html');
+    settingsBtn.addEventListener('click', ()=> location.href = 'settings.html');
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('authToken'); localStorage.removeItem('token'); localStorage.removeItem('accessToken');
+      // optionally call server logout endpoint
+      location.href = 'login.html';
+    });
+
+    editProfileBtn.addEventListener('click', ()=> {
+      // redirect to profile edit (if you have profile.html)
+      location.href = 'profile.html' // or open edit modal
+    });
+
+    // ---------- Real-time: socket.io ----------
+    let socket = null;
+    try {
+      if (typeof io !== 'undefined') {
+        socket = io({ auth: { token } });
+        socket.on('connect', ()=> console.log('socket connected'));
+        socket.on('warning:updated', (d)=> {
+          if (d.roll === userRoll) {
+            // refresh warnings and profile
+            fetchProfile(); fetchWarnings();
+          }
+        });
+        socket.on('student:locked', (d)=> {
+          if (d.roll === userRoll) fetchProfile();
+        });
+        socket.on('student:unlocked', (d)=> {
+          if (d.roll === userRoll) fetchProfile();
+        });
+        socket.on('coursePlan:updated', ()=> fetchNotices());
+        socket.on('chat:new', (chat)=> {
+          if (chat.roll === userRoll) fetchChatHistoryAndUsage();
+        });
+      }
+    } catch (err) {
+      console.warn('socket.io not available', err);
+    }
+
+    // ---------- Initial load & polling ----------
+    async function loadAll() {
+      await fetchProfile();
+      await fetchChatHistoryAndUsage();
+      await fetchNotices();
+      await fetchWarnings()
+        //optional advanced warnings
+    }
+    loadAll();
+    // poll every 12 seconds to refresh status
+    const poll = setInterval(loadAll, 12000);
+
+    // Clean up before unload
+    window.addEventListener('beforeunload', ()=> {
+      clearInterval(poll);
+      if (socket) socket.disconnect();
+    });
+
+    // On initial page show local avatar if backend avatar missing
+    showLocalAvatar();
+  </script>
 </body>
 </html>
