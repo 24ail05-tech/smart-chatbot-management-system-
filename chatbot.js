@@ -1,5 +1,5 @@
 // ==================== CONFIG ====================
-const API_URL = ""; // Set your backend API base URL
+const API_URL = "https://smart-chatbot-backend-w5tq.onrender.com";
 let TOKEN = "";     // Should be set by login.html after successful login
 
 // Block execution if TOKEN is missing (hard security)
