@@ -128,7 +128,6 @@
     th {
         color: #93c5fd;
     }
-
 </style>
 </head>
 
@@ -226,29 +225,37 @@
 </div>
 
 <script src="admin.js"></script>
+
 <script>
+// SECTION SWITCHING
+function showSection(id) {
+    document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
 
-    // Logout securely
-    function logout() {
-        fetch("/api/admin/logout", { method: "POST", credentials: "include" })
-            .then(() => window.location.href = "/login.html")
-            .catch(() => window.location.href = "/login.html");
-    }
+// LOGOUT SECURELY
+function logout() {
+    fetch("/api/admin/logout", { method: "POST", credentials: "include" })
+        .then(() => window.location.href = "/login.html")
+        .catch(() => window.location.href = "/login.html");
+}
 
-    // Attach buttons to secure admin.js functions
-    document.getElementById("uploadPlanBtn").addEventListener("click", uploadPlan);
-    document.getElementById("lockAllBtn").addEventListener("click", globalLock);
-    document.getElementById("unlockAllBtn").addEventListener("click", globalUnlock);
-    document.getElementById("applySpecificLockBtn").addEventListener("click", applySpecificLock);
-    document.getElementById("saveAutoLockBtn").addEventListener("click", saveAutoLock);
+// CONNECT BUTTONS TO admin.js
+document.getElementById("uploadPlanBtn").addEventListener("click", uploadPlan);
+document.getElementById("lockAllBtn").addEventListener("click", globalLock);
+document.getElementById("unlockAllBtn").addEventListener("click", globalUnlock);
+document.getElementById("applySpecificLockBtn").addEventListener("click", applySpecificLock);
+document.getElementById("saveAutoLockBtn").addEventListener("click", saveAutoLock);
 
-    // Search users
-    document.getElementById("userSearchInput").addEventListener("input", searchUsers);
+document.getElementById("userSearchInput").addEventListener("input", searchUsers);
 
-    // Load initial secure data
-    window.onload = async () => {
-        await displayPlans();
-        await displayWarnings();
-        await loadUsers();
-    };
+// INITIAL LOAD
+window.onload = async () => {
+    await displayPlans();
+    await displayWarnings();
+    await loadUsers();
+};
 </script>
+
+</body>
+</html>
