@@ -1,167 +1,217 @@
 /* =====================================================
-   API MODULE – centralizes all backend requests
+   CENTRAL API MODULE — Secure Client → Server Connector
 ===================================================== */
 
-const API_BASE = "/api"; // adjust if your backend is on another domain
+const API_BASE = "/api"; // if backend hosted elsewhere, change here
 
-/* ==================== AUTH ==================== */
+/* =====================================================
+   AUTH (Login / Register / Profile)
+===================================================== */
 export async function login(email, password) {
-    const res = await fetch(`${API_BASE}/login`, {
+    const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password })
     });
     return res.json();
 }
 
 export async function register(user) {
-    const res = await fetch(`${API_BASE}/register`, {
+    const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(user)
     });
     return res.json();
 }
 
-export async function getProfile(token) {
-    const res = await fetch(`${API_BASE}/me`, {
-        headers: { "Authorization": `Bearer ${token}` }
+export async function getProfile() {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+        credentials: "include"
     });
     return res.json();
 }
 
-/* ==================== COURSE PLANS ==================== */
+/* =====================================================
+   COURSE PLANS — Admin Only
+===================================================== */
 export async function uploadCoursePlan(file) {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE}/course-plans`, {
+    const res = await fetch(`${API_BASE}/admin/course-plans`, {
         method: "POST",
+        credentials: "include",
         body: formData
     });
     return res.json();
 }
 
 export async function fetchCoursePlans() {
-    const res = await fetch(`${API_BASE}/course-plans`);
+    const res = await fetch(`${API_BASE}/admin/course-plans`, {
+        credentials: "include"
+    });
     return res.json();
 }
 
 export async function deleteCoursePlan(id) {
-    const res = await fetch(`${API_BASE}/course-plans/${id}`, { method: "DELETE" });
+    const res = await fetch(`${API_BASE}/admin/course-plans/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
     return res.json();
 }
 
-/* ==================== CHAT LOCK ==================== */
+/* =====================================================
+   CHAT LOCK SYSTEM — Admin Only
+===================================================== */
 export async function setGlobalLock(state) {
-    await fetch(`${API_BASE}/chat/lock/global`, {
+    const res = await fetch(`${API_BASE}/admin/chat/lock/global`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ state })
     });
+    return res.json();
 }
 
-export async function setSpecificLock(lockData) {
-    await fetch(`${API_BASE}/chat/lock/specific`, {
+export async function setSpecificLock(data) {
+    const res = await fetch(`${API_BASE}/admin/chat/lock/specific`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(lockData)
+        credentials: "include",
+        body: JSON.stringify(data)
     });
+    return res.json();
 }
 
 export async function setAutoLock(threshold) {
-    await fetch(`${API_BASE}/chat/auto-lock`, {
+    const res = await fetch(`${API_BASE}/admin/chat/auto-lock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ threshold })
     });
-}
-
-/* ==================== WARNINGS ==================== */
-export async function addWarning(student, message) {
-    await fetch(`${API_BASE}/warnings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student, message })
-    });
-}
-
-export async function fetchWarnings() {
-    const res = await fetch(`${API_BASE}/warnings`);
     return res.json();
 }
 
-/* ==================== CHATBOT ==================== */
-export async function askChatbot(prompt) {
-    const res = await fetch(`${API_BASE}/ask`, {
+/* =====================================================
+   WARNINGS — Admin Only
+===================================================== */
+export async function addWarning(student, message) {
+    const res = await fetch(`${API_BASE}/admin/warnings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        credentials: "include",
+        body: JSON.stringify({ student, message })
     });
-    const data = await res.json();
-    return data.answer || "No response from chatbot";
+    return res.json();
 }
 
-/* ==================== NOTICES ==================== */
+export async function fetchWarnings() {
+    const res = await fetch(`${API_BASE}/admin/warnings`, {
+        credentials: "include"
+    });
+    return res.json();
+}
+
+/* =====================================================
+   CHATBOT — Students
+===================================================== */
+export async function askChatbot(prompt) {
+    const res = await fetch(`${API_BASE}/chatbot/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ prompt })
+    });
+    return (await res.json()).answer || "No response";
+}
+
+/* =====================================================
+   NOTICES — Admin
+===================================================== */
 export async function fetchNotices() {
-    const res = await fetch(`${API_BASE}/notices`);
+    const res = await fetch(`${API_BASE}/admin/notices`, {
+        credentials: "include"
+    });
     return res.json();
 }
 
 export async function createNotice(payload) {
-    const res = await fetch(`${API_BASE}/notices`, {
+    const res = await fetch(`${API_BASE}/admin/notices`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload)
     });
     return res.json();
 }
 
 export async function updateNotice(id, payload) {
-    const res = await fetch(`${API_BASE}/notices/${id}`, {
+    const res = await fetch(`${API_BASE}/admin/notices/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload)
     });
     return res.json();
 }
 
 export async function deleteNotice(id) {
-    const res = await fetch(`${API_BASE}/notices/${id}`, { method: "DELETE" });
+    const res = await fetch(`${API_BASE}/admin/notices/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
     return res.json();
 }
 
-/* ==================== USERS ==================== */
+/* =====================================================
+   USERS — Admin Only
+===================================================== */
 export async function fetchUsers() {
-    const res = await fetch(`${API_BASE}/users`);
+    const res = await fetch(`${API_BASE}/admin/users`, {
+        credentials: "include"
+    });
     return res.json();
 }
 
 export async function searchUsers(query) {
     const users = await fetchUsers();
-    return users.filter(u => u.name.toLowerCase().includes(query.toLowerCase()));
+    return users.filter(u =>
+        u.name?.toLowerCase().includes(query.toLowerCase()) ||
+        u.email?.toLowerCase().includes(query.toLowerCase())
+    );
 }
 
-/* ==================== BADGES ==================== */
+/* =====================================================
+   BADGES — Admin
+===================================================== */
 export async function fetchBadges() {
-    const res = await fetch(`${API_BASE}/badges`);
+    const res = await fetch(`${API_BASE}/admin/badges`, {
+        credentials: "include"
+    });
     return res.json();
 }
 
 export async function createBadge(payload) {
-    const res = await fetch(`${API_BASE}/badges`, {
+    const res = await fetch(`${API_BASE}/admin/badges`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload)
     });
     return res.json();
 }
 
 export async function assignBadge(email, badgeId) {
-    const res = await fetch(`${API_BASE}/badges/assign`, {
+    const res = await fetch(`${API_BASE}/admin/badges/assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, badgeId })
     });
     return res.json();
-                            }
+}
