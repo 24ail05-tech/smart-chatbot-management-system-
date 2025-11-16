@@ -49,6 +49,7 @@
         text-decoration: none;
         color: #cbd5e1;
         transition: 0.3s;
+        cursor: pointer;
     }
 
     .menu a:hover {
@@ -162,31 +163,13 @@
         <div class="card">
             <h3>Upload Course Plan (PDF)</h3>
             <input type="file" id="fileInput" accept="application/pdf">
-            <button onclick="uploadPlan()">Upload</button>
-        </div>
-
-        <div class="card">
-            <h3>Assign Course Plan</h3>
-            <select>
-                <option>Select Department</option>
-            </select>
-            <select>
-                <option>Select Class</option>
-            </select>
-            <select>
-                <option>Select Semester</option>
-            </select>
-            <select>
-                <option>Select Uploaded Plan</option>
-            </select>
-            <button>Assign</button>
+            <button id="uploadPlanBtn">Upload</button>
         </div>
 
         <div class="card">
             <h3>Uploaded Course Plans</h3>
-            <table>
+            <table id="coursePlansTable">
                 <tr><th>File</th><th>Date</th><th>Action</th></tr>
-                <tr><td>AI-Sem3.pdf</td><td>Today</td><td><button>Delete</button></td></tr>
             </table>
         </div>
     </div>
@@ -197,33 +180,32 @@
 
         <div class="card">
             <h3>Global Chat Control</h3>
-            <button style="background:#ef4444;">Lock All</button>
-            <button style="background:#22c55e;">Unlock All</button>
+            <button id="lockAllBtn" style="background:#ef4444;">Lock All</button>
+            <button id="unlockAllBtn" style="background:#22c55e;">Unlock All</button>
         </div>
 
         <div class="card">
             <h3>Specific Lock</h3>
-            <select><option>Select Department</option></select>
-            <select><option>Select Class</option></select>
-            <select><option>Select Student (optional)</option></select>
-            <button>Apply Lock</button>
+            <select id="deptLock"><option>Select Department</option></select>
+            <select id="classLock"><option>Select Class</option></select>
+            <select id="studentLock"><option>Select Student (optional)</option></select>
+            <button id="applySpecificLockBtn">Apply Lock</button>
         </div>
 
         <div class="card">
             <h3>Auto-Lock Settings</h3>
-            <select>
-                <option>After 3 violations</option>
-                <option>After 5 violations</option>
-                <option>Disable Auto-Lock</option>
+            <select id="autoLockSelect">
+                <option value="3">After 3 violations</option>
+                <option value="5">After 5 violations</option>
+                <option value="0">Disable Auto-Lock</option>
             </select>
-            <button>Save</button>
+            <button id="saveAutoLockBtn">Save</button>
         </div>
 
         <div class="card">
             <h3>Warnings / Violations</h3>
-            <table>
+            <table id="warningsTable">
                 <tr><th>Student</th><th>Violation</th><th>Date</th></tr>
-                <tr><td>Hari</td><td>Asked unrelated topic</td><td>Today</td></tr>
             </table>
         </div>
     </div>
@@ -234,33 +216,47 @@
 
         <div class="card">
             <h3>All Users</h3>
-            <input type="text" placeholder="Search users...">
-            <table>
+            <input type="text" id="userSearchInput" placeholder="Search users...">
+            <table id="usersTable">
                 <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
-                <tr>
-                    <td>Hari</td><td>hari@gmail.com</td><td>Student</td><td>Active</td>
-                    <td><button style="background:#ef4444;">Lock</button></td>
-                </tr>
             </table>
         </div>
     </div>
 
 </div>
 
+<script src="admin-api.js"></script>
 <script>
-function showSection(id) {
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
-}
+    // Show/hide sections
+    function showSection(id) {
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+    }
 
-function logout() {
-    alert("Logged out!");
-}
+    // Logout securely
+    function logout() {
+        fetch("/api/admin/logout", { method: "POST", credentials: "include" })
+            .then(() => window.location.href = "/login.html")
+            .catch(() => window.location.href = "/login.html");
+    }
 
-function uploadPlan() {
-    alert("Upload function will work after backend setup.");
-}
+    // Attach buttons to API.js functions
+    document.getElementById("uploadPlanBtn").addEventListener("click", uploadPlan);
+    document.getElementById("lockAllBtn").addEventListener("click", globalLock);
+    document.getElementById("unlockAllBtn").addEventListener("click", globalUnlock);
+    document.getElementById("applySpecificLockBtn").addEventListener("click", applySpecificLock);
+    document.getElementById("saveAutoLockBtn").addEventListener("click", saveAutoLock);
+
+    // Search users
+    document.getElementById("userSearchInput").addEventListener("input", searchUsers);
+
+    // Load initial data securely
+    window.onload = async () => {
+        await displayPlans();
+        await displayWarnings();
+        await loadUsers();
+    }
 </script>
 
 </body>
-              </html>
+</html>
