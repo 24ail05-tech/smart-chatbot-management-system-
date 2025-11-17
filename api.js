@@ -26,7 +26,7 @@ export async function login(email, password) {
             "x-csrf-token": csrf
         },
         credentials: "include",
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ roll, password })
     });
     return res.json();
 }
