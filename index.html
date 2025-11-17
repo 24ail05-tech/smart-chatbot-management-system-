@@ -181,7 +181,7 @@ loginBtn.addEventListener("click", async () => {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken
+        "x-csrf-token": csrfToken
       },
       body: JSON.stringify({ roll, password })
     });
@@ -232,7 +232,7 @@ signupBtn.addEventListener("click", async () => {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken
+        "x-csrf-token": csrfToken
       },
       body: JSON.stringify({
         name, roll, dept, cls, email, password, role: "student"
