@@ -173,7 +173,7 @@ loginBtn.addEventListener("click", async () => {
     sessionStorage.setItem("token", data.accessToken);
     sessionStorage.setItem("userProfile", JSON.stringify(data.student));
 
-    window.location.href = "chat.html";
+    window.location.href = "chatbot.html";
   } catch {
     error.textContent = "Server error, try later.";
   }
