@@ -392,9 +392,9 @@ function csrfProtect(req, res, next) {
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
   const cookieToken = req.cookies["csrf_token"];
   const headerToken = req.headers["x-csrf-token"];
-  //if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-    //return res.status(403).json({ error: "Invalid CSRF token" });
-  //}
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    return res.status(403).json({ error: "Invalid CSRF token" });
+  }
   next();
 }
 // Endpoint to get CSRF token (frontend should call this after login or page load)
