@@ -4,47 +4,45 @@
 
 const API_BASE = "https://smart-chatbot-backend-w5tq.onrender.com";
 
-/* =====================================================
-   AUTH (Login / Register / Profile)
-===================================================== */
+let CSRF_TOKEN = null;
 
-// CSRF token fetcher (REQUIRED!)
-async function getCSRF() {
+// ---------------------- CSRF Handling ----------------------
+export async function getCSRF() {
+    if (CSRF_TOKEN) return CSRF_TOKEN;
+
     const res = await fetch(`${API_BASE}/api/csrf-token`, {
         credentials: "include"
     });
-    return (await res.json()).csrfToken;
+    CSRF_TOKEN = (await res.json()).csrfToken;
+    return CSRF_TOKEN;
 }
 
+// wrapper for fetch that includes CSRF automatically
+async function fetchWithCSRF(url, options = {}) {
+    const csrf = await getCSRF();
+    options.credentials = "include";
+    options.headers = {
+        ...options.headers,
+        "x-csrf-token": csrf
+    };
+    return fetch(url, options);
+}
+
+// ---------------------- AUTH ----------------------
 export async function login(roll, password) {
-    const csrf = await getCSRF(); 
-
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
+    return fetchWithCSRF(`${API_BASE}/api/auth/login`, {
         method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "x-csrf-token": csrf
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roll, password })
-    });
-
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function register(user) {
-    const csrf = await getCSRF();
-
-    const res = await fetch(`${API_BASE}/api/auth/register`, {
+    return fetchWithCSRF(`${API_BASE}/api/auth/register`, {
         method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "x-csrf-token": csrf
-        },
-        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user)
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function getProfile() {
@@ -54,19 +52,15 @@ export async function getProfile() {
     return res.json();
 }
 
-/* =====================================================
-   COURSE PLANS — Admin Only
-===================================================== */
+// ---------------------- COURSE PLANS (Admin) ----------------------
 export async function uploadCoursePlan(file) {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_BASE}/api/admin/course-plans`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/course-plans`, {
         method: "POST",
-        credentials: "include",
         body: formData
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function fetchCoursePlans() {
@@ -77,57 +71,43 @@ export async function fetchCoursePlans() {
 }
 
 export async function deleteCoursePlan(id) {
-    const res = await fetch(`${API_BASE}/api/admin/course-plans/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-    });
-    return res.json();
+    return fetchWithCSRF(`${API_BASE}/api/admin/course-plans/${id}`, {
+        method: "DELETE"
+    }).then(res => res.json());
 }
 
-/* =====================================================
-   CHAT LOCK SYSTEM — Admin Only
-===================================================== */
+// ---------------------- CHAT LOCK SYSTEM (Admin) ----------------------
 export async function setGlobalLock(state) {
-    const res = await fetch(`${API_BASE}/api/admin/chat/lock/global`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/chat/lock/global`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ state })
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function setSpecificLock(data) {
-    const res = await fetch(`${API_BASE}/api/admin/chat/lock/specific`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/chat/lock/specific`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(data)
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function setAutoLock(threshold) {
-    const res = await fetch(`${API_BASE}/api/admin/chat/auto-lock`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/chat/auto-lock`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ threshold })
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
-/* =====================================================
-   WARNINGS — Admin Only
-===================================================== */
+// ---------------------- WARNINGS (Admin) ----------------------
 export async function addWarning(student, message) {
-    const res = await fetch(`${API_BASE}/api/admin/warnings`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/warnings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ student, message })
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function fetchWarnings() {
@@ -137,24 +117,16 @@ export async function fetchWarnings() {
     return res.json();
 }
 
-/* =====================================================
-   CHATBOT — Students
-===================================================== */
+// ---------------------- CHATBOT (Students) ----------------------
 export async function askChatbot(prompt) {
-    const res = await fetch(`${API_BASE}/api/chatbot/ask`, {
+    return fetchWithCSRF(`${API_BASE}/api/chatbot/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ prompt })
-    });
-
-    const data = await res.json();
-    return data.answer || "No response";
+    }).then(res => res.json()).then(data => data.answer || "No response");
 }
 
-/* =====================================================
-   NOTICES — Admin
-===================================================== */
+// ---------------------- NOTICES (Admin) ----------------------
 export async function fetchNotices() {
     const res = await fetch(`${API_BASE}/api/admin/notices`, {
         credentials: "include"
@@ -163,36 +135,28 @@ export async function fetchNotices() {
 }
 
 export async function createNotice(payload) {
-    const res = await fetch(`${API_BASE}/api/admin/notices`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/notices`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(payload)
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function updateNotice(id, payload) {
-    const res = await fetch(`${API_BASE}/api/admin/notices/${id}`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/notices/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(payload)
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function deleteNotice(id) {
-    const res = await fetch(`${API_BASE}/api/admin/notices/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-    });
-    return res.json();
+    return fetchWithCSRF(`${API_BASE}/api/admin/notices/${id}`, {
+        method: "DELETE"
+    }).then(res => res.json());
 }
 
-/* =====================================================
-   USERS — Admin Only
-===================================================== */
+// ---------------------- USERS (Admin) ----------------------
 export async function fetchUsers() {
     const res = await fetch(`${API_BASE}/api/admin/users`, {
         credentials: "include"
@@ -208,9 +172,7 @@ export async function searchUsers(query) {
     );
 }
 
-/* =====================================================
-   BADGES — Admin
-===================================================== */
+// ---------------------- BADGES (Admin) ----------------------
 export async function fetchBadges() {
     const res = await fetch(`${API_BASE}/api/admin/badges`, {
         credentials: "include"
@@ -219,21 +181,17 @@ export async function fetchBadges() {
 }
 
 export async function createBadge(payload) {
-    const res = await fetch(`${API_BASE}/api/admin/badges`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/badges`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(payload)
-    });
-    return res.json();
+    }).then(res => res.json());
 }
 
 export async function assignBadge(email, badgeId) {
-    const res = await fetch(`${API_BASE}/api/admin/badges/assign`, {
+    return fetchWithCSRF(`${API_BASE}/api/admin/badges/assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ email, badgeId })
-    });
-    return res.json();
+    }).then(res => res.json());
 }
