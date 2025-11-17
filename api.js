@@ -16,8 +16,8 @@ async function getCSRF() {
     return (await res.json()).csrfToken;
 }
 
-export async function login(email, password) {
-    const csrf = await getCSRF();
+export async function login(roll, password) {
+    const csrf = await getCSRF(); 
 
     const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
@@ -28,6 +28,7 @@ export async function login(email, password) {
         credentials: "include",
         body: JSON.stringify({ roll, password })
     });
+
     return res.json();
 }
 
