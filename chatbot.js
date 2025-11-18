@@ -221,7 +221,7 @@ async function askGemini(prompt) {
   if (!studentProfile) return "Error: Profile missing.";
 
   try {
-    const data = await secureFetch(`${API_URL}/api/chat`, {
+    const res = await secureFetch(`${API_URL}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -230,8 +230,15 @@ async function askGemini(prompt) {
         message: prompt,
         useGemini: true
       })
-    }).then(res => res.json());
+    });
 
+    if (!res.ok) {
+      const err = await res.json();
+      console.error("Chat API error:", err);
+      return err.error || "Error from server";
+    }
+
+    const data = await res.json();
     return data.assistantReply || data.answer || "No response from AI.";
   } catch (err) {
     console.error("Chat error:", err);
