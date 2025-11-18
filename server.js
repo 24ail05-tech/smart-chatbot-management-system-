@@ -425,14 +425,33 @@ app.post("/api/auth/register", csrfProtect, async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const student = new Student({ roll, name, dept, cls, passwordHash });
-    const tokenId = generateTokenId();
-    student.refreshTokens.push({ tokenId, expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) });
     await student.save();
+
+    // Use an atomic update to add refresh token (avoid VersionError)
+    const tokenId = generateTokenId();
+    await Student.updateOne(
+      { _id: student._id },
+      {
+        $push: {
+          refreshTokens: {
+            tokenId,
+            expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000)
+          }
+        }
+      }
+    );
 
     const accessToken = signAccessToken(student);
     const refreshToken = signRefreshToken(student, tokenId);
 
-    
+    // create and set csrf token cookie (double-submit)
+    const csrfToken = generateCsrfToken();
+    res.cookie("csrf_token", csrfToken, {
+      httpOnly: false,
+      sameSite: "lax",
+      secure: NODE_ENV === "production",
+      maxAge: 24 * 3600 * 1000,
+    });
 
     res.status(201).json({
       accessToken,
