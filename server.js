@@ -447,7 +447,7 @@ app.post("/api/auth/register", csrfProtect, async (req, res) => {
 });
 
 // Auth: login
-app.post("/api/auth/login", csrfProtect, async (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
     const { error, value } = loginSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.message });
