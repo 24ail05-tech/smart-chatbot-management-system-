@@ -445,7 +445,6 @@ app.post("/api/auth/register", csrfProtect, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
 // Auth: login
 app.post("/api/auth/login", async (req, res) => {
   try {
@@ -453,6 +452,7 @@ app.post("/api/auth/login", async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     const { roll, password } = value;
+
     const student = await Student.findOne({ roll });
     if (!student) return res.status(401).json({ error: "Invalid credentials" });
 
@@ -460,35 +460,63 @@ app.post("/api/auth/login", async (req, res) => {
     if (student.lockedUntil && new Date(student.lockedUntil) > new Date()) {
       return res.status(403).json({ error: "Account is locked", lockedUntil: student.lockedUntil });
     }
+
     // Redis lock
     const redisLock = await getAccountLockRedis(roll);
     if (redisLock) return res.status(403).json({ error: "Account locked", reason: redisLock });
 
+    // Password check
     const ok = await student.verifyPassword(password);
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
-    // rotate refresh token
+    // ===== FIX 1: SAFE refresh token update (atomic) =====
     const tokenId = generateTokenId();
-    student.refreshTokens.push({ tokenId, expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000) });
-    if (student.refreshTokens.length > 10) student.refreshTokens = student.refreshTokens.slice(-10);
-    await student.save();
+    await Student.updateOne(
+      { _id: student._id },
+      {
+        $push: {
+          refreshTokens: {
+            tokenId,
+            expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000)
+          }
+        }
+      }
+    );
 
+    // Tokens
     const accessToken = signAccessToken(student);
     const refreshToken = signRefreshToken(student, tokenId);
 
+    // ===== FIX 2: Add missing csrfToken variable =====
+    const csrfToken = generateCsrfToken();
 
+    // Set CSRF cookie
+    res.cookie("csrf_token", csrfToken, {
+      httpOnly: false,
+      sameSite: "lax",
+      secure: NODE_ENV === "production"
+    });
 
+    // Final response
     res.json({
       accessToken,
       refreshToken,
       csrfToken,
-      student: { roll: student.roll, name: student.name, dept: student.dept, cls: student.cls, role: student.role },
+      student: {
+        roll: student.roll,
+        name: student.name,
+        dept: student.dept,
+        cls: student.cls,
+        role: student.role
+      }
     });
+
   } catch (err) {
     console.error("login error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // Auth refresh
 app.post("/api/auth/refresh", csrfProtect, async (req, res) => {
