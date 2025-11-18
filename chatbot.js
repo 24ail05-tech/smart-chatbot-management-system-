@@ -219,7 +219,7 @@ async function checkSpecificLockFromServer() {
 // ==================== CHATBOT REQUEST ====================
 async function askGemini(prompt) {
   try {
-    const res = await secureFetch(`${API_URL}/api/chat`, {
+    const r = await fetch(`${API_URL}/api/csrf-token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
