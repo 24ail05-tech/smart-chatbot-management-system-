@@ -21,10 +21,7 @@ const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const profileBtn = document.getElementById("profileBtn");
 const statusMsg = document.getElementById("statusMsg");
-
 const bgColorInput = document.getElementById("bgColorInput");
-const resetProfileBtn = document.getElementById("resetProfileBtn");
-const clearChatBtn = document.getElementById("clearChatBtn");
 const studentInfoDiv = document.getElementById("studentInfo");
 
 // ==================== STATE ====================
@@ -45,10 +42,7 @@ async function secureFetch(url, options = {}) {
   ensureToken();
 
   if (!csrfToken) {
-    const r = await fetch(`${API_URL}/csrf-token`, {
-      method: "GET",
-      credentials: "include"
-    });
+    const r = await fetch(`${API_URL}/csrf-token`, { method: "GET", credentials: "include" });
     const d = await r.json();
     csrfToken = d.csrfToken;
   }
@@ -59,8 +53,8 @@ async function secureFetch(url, options = {}) {
     headers: {
       ...(options.headers || {}),
       "Authorization": `Bearer ${TOKEN}`,
-      "x-csrf-token": csrfToken
-    }
+      "x-csrf-token": csrfToken,
+    },
   };
 
   const res = await fetch(url, opts);
@@ -105,7 +99,7 @@ profileBtn?.addEventListener("click", async () => {
   await secureFetch(`${API_URL}/api/me`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(profile)
+    body: JSON.stringify(profile),
   });
 
   studentProfile = profile;
@@ -158,12 +152,17 @@ async function addMessage(sender, text, time = null) {
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 
-  // Send to server via /api/chat
+  // Only send user messages to server
   if (sender === "user") {
     await secureFetch(`${API_URL}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roll: studentProfile.roll, sender, message: text, useGemini: sender === "user" })
+      body: JSON.stringify({
+        roll: studentProfile.roll,
+        sender: "user",
+        message: text,
+        useGemini: true
+      }),
     });
   }
 }
@@ -206,12 +205,16 @@ async function fetchWarningsAndLock() {
 
 async function registerWarning() {
   try {
-    const res = await secureFetch(`${API_URL}/api/warning`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roll: studentProfile.roll, reason: "Syllabus violation" }) });
+    const res = await secureFetch(`${API_URL}/api/warning`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roll: studentProfile.roll, reason: "Syllabus violation" })
+    });
     if (!res.ok) return;
 
     const data = await res.json();
     warningsCount = data.warning ? data.warning.length : warningsCount + 1;
-    chatLock = data.warning?.locked || false;
+    chatLock = !!data.warning?.locked;
 
     displayWarningsCount();
   } catch (err) {
@@ -272,14 +275,4 @@ bgColorInput?.addEventListener("change", async (e) => {
     body: JSON.stringify({ roll: studentProfile.roll, bgColor: bg })
   });
   document.body.style.background = bg;
-});
-
-// ==================== RESET / CLEAR ====================
-resetProfileBtn?.addEventListener("click", async () => {
-  alert("Reset profile feature not implemented in server.js");
-});
-
-clearChatBtn?.addEventListener("click", async () => {
-  chatBox.innerHTML = "";
-  alert("Clear chat feature not implemented in server.js");
 });
