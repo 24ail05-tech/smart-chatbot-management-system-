@@ -1,8 +1,9 @@
 // ==================== CONFIG ====================
 const API_URL = "https://smart-chatbot-backend-w5tq.onrender.com";
-let TOKEN = "";     // Should be set by login.html after successful login
+let TOKEN = ""; // Set after login
 let csrfToken = "";
-// Block execution if TOKEN is missing (hard security)
+
+// Block execution if TOKEN is missing
 function ensureToken() {
   if (!TOKEN) {
     alert("Security Error: No access token found. Please log in again.");
@@ -36,13 +37,13 @@ window.onload = async () => {
   await loadProfileFromServer();
   await applyBackgroundColorFromServer();
   await loadChatHistoryFromServer();
-  await fetchWarnings();
+  await fetchWarningsAndLock();
 };
-// ==================== SECURE API WRAPPER ====================
+
+// ==================== SECURE FETCH ====================
 async function secureFetch(url, options = {}) {
   ensureToken();
 
-  // Make sure CSRF token is fetched
   if (!csrfToken) {
     const r = await fetch(`${API_URL}/csrf-token`, {
       method: "GET",
@@ -101,7 +102,6 @@ profileBtn?.addEventListener("click", async () => {
   if (!name || !roll || !dept || !cls) return alert("All fields required!");
 
   const profile = { name, roll, dept, cls };
-
   await secureFetch(`${API_URL}/api/me`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -131,14 +131,13 @@ sendBtn?.addEventListener("click", async () => {
   const message = chatInput.value.trim();
   if (!message) return;
 
-  if (chatLock || await checkSpecificLockFromServer()) {
+  if (chatLock || await checkChatLock()) {
     return alert("⚠️ Chat is locked due to repeated violations.");
   }
 
   await addMessage("user", message);
   chatInput.value = "";
 
-  // Enforce syllabus-only rule
   if (!isValidSyllabusQuery(message)) {
     await registerWarning();
     await addMessage("bot", "⚠️ Only syllabus-related questions are allowed.");
@@ -149,7 +148,7 @@ sendBtn?.addEventListener("click", async () => {
   await addMessage("bot", response);
 });
 
-// Store message + Display it
+// Add message to chatbox and server
 async function addMessage(sender, text, time = null) {
   time = time || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -159,19 +158,27 @@ async function addMessage(sender, text, time = null) {
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 
-  await secureFetch(`${API_URL}/api/chat/history`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sender, text, time })
-  });
+  // Send to server via /api/chat
+  if (sender === "user") {
+    await secureFetch(`${API_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roll: studentProfile.roll, sender, message: text, useGemini: sender === "user" })
+    });
+  }
 }
 
+// ==================== CHAT HISTORY ====================
 async function loadChatHistoryFromServer() {
-  const res = await secureFetch(`${API_URL}/api/chat/history`);
-  if (!res.ok) return;
+  try {
+    const res = await secureFetch(`${API_URL}/api/chat/${studentProfile.roll}`);
+    if (!res.ok) return;
 
-  const history = await res.json();
-  history.forEach(m => addMessage(m.sender, m.text, m.time));
+    const history = await res.json();
+    history.reverse().forEach(m => addMessage(m.sender, m.message, m.time));
+  } catch (err) {
+    console.error("Load chat history failed:", err);
+  }
 }
 
 // ==================== SYLLABUS CHECK ====================
@@ -181,65 +188,58 @@ function isValidSyllabusQuery(text) {
   return allowed.some(k => text.includes(k));
 }
 
-// ==================== WARNINGS ====================
-async function fetchWarnings() {
-  const res = await secureFetch(`${API_URL}/api/warnings`);
-  if (!res.ok) return;
+// ==================== WARNINGS & LOCK ====================
+async function fetchWarningsAndLock() {
+  try {
+    const res = await secureFetch(`${API_URL}/api/dashboard/status`);
+    if (!res.ok) return;
 
-  const data = await res.json();
-  warningsCount = data.count || 0;
-  chatLock = data.locked || false;
+    const data = await res.json();
+    warningsCount = data.warnings?.length || 0;
+    chatLock = !!data.activeLock;
 
-  displayWarningsCount();
+    displayWarningsCount();
+  } catch (err) {
+    console.error("Fetch warnings/lock failed:", err);
+  }
 }
 
 async function registerWarning() {
-  const res = await secureFetch(`${API_URL}/api/warnings`, { method: "POST" });
-  if (!res.ok) return;
+  try {
+    const res = await secureFetch(`${API_URL}/api/warning`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ roll: studentProfile.roll, reason: "Syllabus violation" }) });
+    if (!res.ok) return;
 
-  const data = await res.json();
-  warningsCount = data.count;
-  chatLock = data.locked;
+    const data = await res.json();
+    warningsCount = data.warning ? data.warning.length : warningsCount + 1;
+    chatLock = data.warning?.locked || false;
 
-  displayWarningsCount();
+    displayWarningsCount();
+  } catch (err) {
+    console.error("Register warning failed:", err);
+  }
 }
 
 function displayWarningsCount() {
   statusMsg.textContent = warningsCount ? `⚠️ Warnings: ${warningsCount}` : "";
 }
 
-// ==================== LOCK STATUS ====================
-async function checkSpecificLockFromServer() {
-  const res = await secureFetch(`${API_URL}/api/locks`);
-  if (!res.ok) return false;
-
-  const data = await res.json();
-  return data.locked;
+async function checkChatLock() {
+  await fetchWarningsAndLock();
+  return chatLock;
 }
+
 // ==================== CHATBOT REQUEST ====================
 async function askGemini(prompt) {
-  if (!studentProfile || !TOKEN) return "Error: Login required.";
-
   try {
-    // Send request with only access token
-    const res = await fetch(`${API_URL}/api/chat`, {
+    const res = await secureFetch(`${API_URL}/api/chat`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${TOKEN}`
-      },
-      body: JSON.stringify({
-        roll: studentProfile.roll,
-        sender: "user",
-        message: prompt,
-        useGemini: true
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roll: studentProfile.roll, sender: "user", message: prompt, useGemini: true })
     });
 
     if (!res.ok) {
       const err = await res.json();
-      console.error("Chat API error:", err);
-      return err.error || "Error from server";
+      return err.error || "Server error";
     }
 
     const data = await res.json();
@@ -252,33 +252,34 @@ async function askGemini(prompt) {
 
 // ==================== BACKGROUND SETTINGS ====================
 async function applyBackgroundColorFromServer() {
-  const res = await secureFetch(`${API_URL}/api/me/settings`);
-  if (!res.ok) return;
+  try {
+    const res = await secureFetch(`${API_URL}/api/me`);
+    if (!res.ok) return;
 
-  const settings = await res.json();
-  const bg = settings.bgColor || "linear-gradient(135deg, #0077ff, #00d4ff)";
-  document.body.style.background = bg;
+    const profile = await res.json();
+    const bg = profile.bgColor || "linear-gradient(135deg, #0077ff, #00d4ff)";
+    document.body.style.background = bg;
+  } catch (err) {
+    console.error("Apply background failed:", err);
+  }
 }
 
 bgColorInput?.addEventListener("change", async (e) => {
   const bg = e.target.value;
-
-  await secureFetch(`${API_URL}/api/me/settings`, {
-    method: "PATCH",
+  await secureFetch(`${API_URL}/api/bgcolor`, {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bgColor: bg })
+    body: JSON.stringify({ roll: studentProfile.roll, bgColor: bg })
   });
-
   document.body.style.background = bg;
 });
 
 // ==================== RESET / CLEAR ====================
 resetProfileBtn?.addEventListener("click", async () => {
-  await secureFetch(`${API_URL}/api/me/reset`, { method: "POST" });
-  location.reload();
+  alert("Reset profile feature not implemented in server.js");
 });
 
 clearChatBtn?.addEventListener("click", async () => {
-  await secureFetch(`${API_URL}/api/chat/history`, { method: "DELETE" });
   chatBox.innerHTML = "";
+  alert("Clear chat feature not implemented in server.js");
 });
