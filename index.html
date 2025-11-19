@@ -4,228 +4,117 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nandha Chatbot Management System</title>
-
 <style>
-  body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #0077ff, #00d4ff);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    color: #fff;
-  }
-
-  @keyframes floatFeather {
-    0% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
-  }
-
-  .feather {
-    position: absolute;
-    bottom: -10%;
-    width: 40px;
-    height: 40px;
-    background: url('https://cdn-icons-png.flaticon.com/512/616/616408.png') no-repeat center;
-    background-size: contain;
-    animation: floatFeather 12s linear infinite;
-    opacity: 0.7;
-  }
-
-  .container {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    backdrop-filter: blur(12px);
-    padding: 40px 50px;
-    width: 340px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    text-align: center;
-    animation: fadeIn 1s ease-in;
-    z-index: 5;
-  }
-
-  h1 { font-size: 27px; font-weight: 700; }
-  input, button {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: none;
-    font-size: 15px;
-  }
-
-  input { background: rgba(255,255,255,0.9); }
-  button {
-    background: #0077ff;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-  button:hover { background: #00bfff; transform: translateY(-2px); }
-
-  .toggle-link { cursor: pointer; text-decoration: underline; }
-  .error-msg { color: #ffcccb; font-size: 13px; }
-  section { display: none; }
-  #loginSection { display: block; }
+  body {margin:0;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#0077ff,#00d4ff);display:flex;justify-content:center;align-items:center;height:100vh;color:#fff;}
+  .container{background:rgba(255,255,255,0.15);border-radius:20px;backdrop-filter:blur(12px);padding:40px 50px;width:340px;text-align:center;}
+  h1{font-size:27px;font-weight:700;}
+  input,button{width:100%;padding:12px;margin:10px 0;border-radius:8px;border:none;font-size:15px;}
+  input{background:rgba(255,255,255,0.9);}
+  button{background:#0077ff;color:white;font-weight:600;cursor:pointer;transition:0.3s;}
+  button:hover{background:#00bfff;transform:translateY(-2px);}
+  .toggle-link{cursor:pointer;text-decoration:underline;}
+  .error-msg{color:#ffcccb;font-size:13px;}
+  section{display:none;}
+  #loginSection{display:block;}
 </style>
 </head>
-
 <body>
-  <!-- Feather animations -->
-  <div class="feather"></div><div class="feather"></div><div class="feather"></div><div class="feather"></div><div class="feather"></div>
+<div class="container">
+  <h1>Nandha Chatbot Management System</h1>
+  <p class="tagline">Your academic assistant</p>
 
-  <div class="container">
-    <h1>Nandha Chatbot Management System</h1>
-    <p class="tagline">Your academic assistant, powered by smart course-aware AI</p>
+  <!-- LOGIN -->
+  <section id="loginSection">
+    <div class="error-msg" id="loginError"></div>
+    <input type="text" id="loginRoll" placeholder="Roll Number or Admin ID">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginBtn">Login</button>
+    <div class="toggle-link" onclick="showSignup()">New user? Signup</div>
+  </section>
 
-    <!-- LOGIN -->
-    <section id="loginSection">
-      <div class="error-msg" id="loginError"></div>
-      <input type="text" id="loginRoll" placeholder="Roll Number or Admin ID" autocomplete="off">
-      <input type="password" id="loginPassword" placeholder="Password" autocomplete="new-password">
-      <button id="loginBtn">Login</button>
-      <div class="toggle-link" onclick="showSignup()">New user? Signup</div>
-    </section>
-
-    <!-- SIGNUP -->
-    <section id="signupSection">
-      <div class="error-msg" id="signupError"></div>
-      <input type="text" id="signupName" placeholder="Full Name" autocomplete="off">
-      <input type="text" id="signupRoll" placeholder="Roll Number" autocomplete="off">
-      <input type="text" id="signupDept" placeholder="Department" autocomplete="off">
-      <input type="text" id="signupClass" placeholder="Class" autocomplete="off">
-      <input type="email" id="signupEmail" placeholder="Email" autocomplete="off">
-      <input type="password" id="signupPassword" placeholder="Password">
-      <input type="password" id="signupConfirmPassword" placeholder="Confirm Password">
-      <button id="signupBtn">Sign Up</button>
-      <div class="toggle-link" onclick="showLogin()">Already have an account? Login</div>
-    </section>
-  </div>
+  <!-- SIGNUP -->
+  <section id="signupSection">
+    <div class="error-msg" id="signupError"></div>
+    <input type="text" id="signupName" placeholder="Full Name">
+    <input type="text" id="signupRoll" placeholder="Roll Number">
+    <input type="text" id="signupDept" placeholder="Department">
+    <input type="text" id="signupClass" placeholder="Class">
+    <input type="email" id="signupEmail" placeholder="Email">
+    <input type="password" id="signupPassword" placeholder="Password">
+    <input type="password" id="signupConfirmPassword" placeholder="Confirm Password">
+    <button id="signupBtn">Sign Up</button>
+    <div class="toggle-link" onclick="showLogin()">Already have an account? Login</div>
+  </section>
+</div>
 
 <script>
 const API_URL = "https://smart-chatbot-backend-w5tq.onrender.com";
 let csrfToken = "";
 
-// -------------------- CSRF --------------------
-async function loadCSRF() {
-  const r = await fetch(`${API_URL}/api/csrf-token`, {
-    method: "GET",
-    credentials: "include"
-  });
+// CSRF
+async function loadCSRF(){
+  const r = await fetch(`${API_URL}/api/csrf-token`, {method:"GET",credentials:"include"});
   const d = await r.json();
-  csrfToken = d.csrfToken;
-  return csrfToken;
+  csrfToken=d.csrfToken;
 }
 
-// -------------------- UTIL --------------------
-function sanitize(str) {
-  return str.replace(/[<>&"']/g, c => ({
-    "<":"&lt;", ">":"&gt;", "&":"&amp;", '"':"&quot;", "'":"&#39;"
-  }[c]));
-}
+// Utils
+function sanitize(str){return str.replace(/[<>&"']/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;","'":"&#39;"}[c]));}
+function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
+function strongPassword(pw){return pw.length>=8 && /[0-9]/.test(pw) && /[A-Z]/.test(pw);}
+function showSignup(){loginSection.style.display="none";signupSection.style.display="block";}
+function showLogin(){signupSection.style.display="none";loginSection.style.display="block";}
 
-function validEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function strongPassword(pw) {
-  return pw.length >= 8 && /[0-9]/.test(pw) && /[A-Z]/.test(pw);
-}
-
-function showSignup() {
-  loginSection.style.display = "none";
-  signupSection.style.display = "block";
-}
-
-function showLogin() {
-  signupSection.style.display = "none";
-  loginSection.style.display = "block";
-}
-
-// -------------------- LOGIN --------------------
-loginBtn.addEventListener("click", async () => {
-  const roll = sanitize(loginRoll.value.trim());
-  const password = sanitize(loginPassword.value.trim());
-  const error = loginError;
-  error.textContent = "";
-
-  if (!roll || !password) return error.textContent = "All fields required!";
-
-  try {
-    await loadCSRF(); // fetch fresh token
-
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "x-csrf-token": csrfToken
-      },
-      body: JSON.stringify({ roll, password })
+// LOGIN
+loginBtn.addEventListener("click",async()=>{
+  const roll=sanitize(loginRoll.value.trim());
+  const password=sanitize(loginPassword.value.trim());
+  loginError.textContent="";
+  if(!roll||!password)return loginError.textContent="All fields required!";
+  try{
+    await loadCSRF();
+    const res=await fetch(`${API_URL}/api/auth/login`,{
+      method:"POST",credentials:"include",
+      headers:{"Content-Type":"application/json","x-csrf-token":csrfToken},
+      body:JSON.stringify({roll,password})
     });
+    const data=await res.json();
+    if(data.error) return loginError.textContent=data.error;
 
-    const data = await res.json();
-    if (data.error) return error.textContent = data.error;
+    // store token + user info
+    sessionStorage.setItem("token",data.accessToken);
+    localStorage.setItem("token",data.accessToken); // persist for student.html
+    sessionStorage.setItem("userProfile",JSON.stringify(data.student));
 
-    // Save token and user info
-    sessionStorage.setItem("token", data.accessToken);
-    sessionStorage.setItem("userProfile", JSON.stringify(data.student));
+    // redirect
+    if(data.student.role==="admin") window.location.href="admin-dashboard.html";
+    else window.location.href="student.html";
 
-    // Redirect based on role
-    if (data.student.role === "admin") {
-      window.location.href = "admin-dashboard.html";
-    } else {
-      window.location.href = "chatbot.html";
-    }
-
-  } catch {
-    error.textContent = "Server error, try later.";
-  }
+  }catch{loginError.textContent="Server error, try later.";}
 });
 
-// -------------------- SIGNUP --------------------
-signupBtn.addEventListener("click", async () => {
-  const name = sanitize(signupName.value.trim());
-  const roll = sanitize(signupRoll.value.trim());
-  const dept = sanitize(signupDept.value.trim());
-  const cls = sanitize(signupClass.value.trim());
-  const email = sanitize(signupEmail.value.trim());
-  const password = sanitize(signupPassword.value.trim());
-  const confirm = sanitize(signupConfirmPassword.value.trim());
-  const error = signupError;
-  error.textContent = "";
-
-  if (!name || !roll || !dept || !cls || !email || !password)
-    return error.textContent = "All fields required!";
-  if (!validEmail(email)) return error.textContent = "Invalid email!";
-  if (!strongPassword(password)) return error.textContent = "Password must be 8+ chars, include number & uppercase!";
-  if (password !== confirm) return error.textContent = "Passwords do not match!";
-
-  try {
-    await loadCSRF(); // fetch fresh token
-
-    const res = await fetch(`${API_URL}/api/auth/register`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "x-csrf-token": csrfToken
-      },
-      body: JSON.stringify({ name, roll, dept, cls, email, password, role: "student" })
+// SIGNUP
+signupBtn.addEventListener("click",async()=>{
+  const name=sanitize(signupName.value.trim()), roll=sanitize(signupRoll.value.trim()),
+  dept=sanitize(signupDept.value.trim()), cls=sanitize(signupClass.value.trim()),
+  email=sanitize(signupEmail.value.trim()), password=sanitize(signupPassword.value.trim()),
+  confirm=sanitize(signupConfirmPassword.value.trim());
+  signupError.textContent="";
+  if(!name||!roll||!dept||!cls||!email||!password)return signupError.textContent="All fields required!";
+  if(!validEmail(email)) return signupError.textContent="Invalid email!";
+  if(!strongPassword(password)) return signupError.textContent="Password must be 8+ chars, include number & uppercase!";
+  if(password!==confirm) return signupError.textContent="Passwords do not match!";
+  try{
+    await loadCSRF();
+    const res=await fetch(`${API_URL}/api/auth/register`,{
+      method:"POST",credentials:"include",
+      headers:{"Content-Type":"application/json","x-csrf-token":csrfToken},
+      body:JSON.stringify({name,roll,dept,cls,email,password,role:"student"})
     });
-
-    const data = await res.json();
-    if (data.error) return error.textContent = data.error;
-
-    alert("Signup successful! Please login.");
-    showLogin();
-  } catch {
-    error.textContent = "Server error, try later.";
-  }
+    const data=await res.json();
+    if(data.error) return signupError.textContent=data.error;
+    alert("Signup successful! Please login."); showLogin();
+  }catch{signupError.textContent="Server error, try later.";}
 });
 </script>
 </body>
