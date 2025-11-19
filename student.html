@@ -137,6 +137,9 @@
   .summary .stat{background:rgba(255,255,255,0.06);padding:10px;border-radius:10px;min-width:110px;text-align:center}
   .open-chat{margin-top:12px}
 
+  /* small helper */
+  .mutedSmall { font-size:13px; opacity:0.85; color:rgba(255,255,255,0.9); }
+
   /* Responsive */
   @media (max-width:980px){
     .wrap{grid-template-columns: 1fr; padding:12px}
@@ -172,8 +175,8 @@
           <div class="profile-meta">
             <h2 id="displayName">Loading...</h2>
             <p id="displayEmail" class="muted">email@example.com</p>
-            <p id="displayRoll" class="muted" style="font-size:13px">Roll: —</p>
-            <p id="displayDept" class="muted" style="font-size:13px">Dept: —</p>
+            <p id="displayRoll" class="muted mutedSmall" style="font-size:13px">Roll: —</p>
+            <p id="displayDept" class="muted mutedSmall" style="font-size:13px">Dept: —</p>
           </div>
         </div>
 
@@ -250,25 +253,39 @@
 
   <script>
     // ---------- CONFIG ----------
-    const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
+    // Accept whichever key the other pages might set (index.html used localStorage.setItem("token", ...))
+    function readStoredToken() {
+      return localStorage.getItem('token') ||
+             localStorage.getItem('accessToken') ||
+             localStorage.getItem('authToken') ||
+             sessionStorage.getItem('token') ||
+             sessionStorage.getItem('accessToken') ||
+             sessionStorage.getItem('authToken') || null;
+    }
+
+    const token = readStoredToken();
+    // If no token, redirect to login straight away
     if (!token) {
-      // not logged in — go to login
-      setTimeout(()=> location.href = 'login.html', 400);
+      // small timeout so the redirect doesn't feel abrupt in dev
+      setTimeout(()=> location.href = 'login.html', 200);
       throw new Error('Not authenticated');
     }
 
-    // Helper: decode JWT to get roll in payload 'sub'
+    // Helper: decode JWT to get roll in payload 'sub' (robust)
     function parseJwt(t) {
       try {
         const p = t.split('.')[1];
-        const decoded = JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/')));
-        return decoded;
-      } catch (e) { return null; }
+        const json = atob(p.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(decodeURIComponent(escape(json)));
+      } catch (e) { 
+        // fallback attempt without decodeURIComponent
+        try { return JSON.parse(atob(t.split('.')[1])); } catch { return null; }
+      }
     }
     const jwtPayload = parseJwt(token);
-    const userRoll = jwtPayload?.sub || jwtPayload?.roll || null;
+    const userRoll = jwtPayload?.sub || jwtPayload?.roll || jwtPayload?.username || null;
 
-    // Base headers
+    // Base headers (explicit)
     function authHeaders() {
       return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
     }
@@ -300,54 +317,91 @@
     const profilePct = document.getElementById('profilePct');
 
     // ---------- UTILS ----------
+    function svgInitialsDataUrl(initials) {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
+            <rect fill='%23ffffff' width='100%' height='100%' rx='100'/>
+            <text x='50%' y='54%' font-size='72' text-anchor='middle' fill='%23000' font-family='Poppins'>${initials}</text>
+          </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
     function showLocalAvatar() {
       const stored = localStorage.getItem('avatarData');
       if (stored) {
         avatarImg.src = stored;
       } else {
-        // fallback initials
+        // fallback initials (use first 2 letters from displayName once present)
         const initials = (displayName.textContent || 'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
-        // small placeholder via data URL
-        avatarImg.src = `data:image/svg+xml;utf8,
-          <svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
-            <rect fill='%23ffffff' width='100%' height='100%' rx='100'/>
-            <text x='50%' y='54%' font-size='72' text-anchor='middle' fill='%23000' font-family='Poppins'>${initials}</text>
-          </svg>`;
+        avatarImg.src = svgInitialsDataUrl(initials);
       }
+    }
+
+    // If avatar fails to load (broken URL), fallback to local avatar or initials
+    avatarImg.addEventListener('error', () => {
+      showLocalAvatar();
+    });
+
+    // Small safe setter to avoid leaving "Loading..."
+    function safeSet(el, text) {
+      if (!el) return;
+      el.textContent = text ?? '—';
     }
 
     // ---------- API CALLS ----------
     async function fetchProfile() {
       try {
-        if (!userRoll) throw new Error('No roll in token');
-        const res = await fetch(`/api/student/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
-        if (!res.ok) throw res;
+        // If we have roll from token, prefer student endpoint
+        let res;
+        if (userRoll) {
+          res = await fetch(`/api/student/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
+        } else {
+          // fallback to /api/me (if implemented)
+          res = await fetch(`/api/me`, { headers: authHeaders() });
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          // token invalid/expired -> force login
+          console.warn('auth failed, redirecting to login', res.status);
+          handleLogoutRedirect();
+          return null;
+        }
+
+        if (!res.ok) {
+          console.warn('profile fetch not ok', res.status);
+          // set reasonable defaults and exit
+          safeSet(displayName, 'Unnamed');
+          safeSet(displayEmail, '—');
+          safeSet(displayRoll, 'Roll: —');
+          safeSet(displayDept, 'Dept: —');
+          showLocalAvatar();
+          return null;
+        }
+
         const data = await res.json();
-        // data is student object
-        displayName.textContent = data.name || data.roll || 'Unnamed';
-        displayEmail.textContent = data.email || '—';
-        displayRoll.textContent = 'Roll: ' + (data.roll || '—');
-        displayDept.textContent = 'Dept: ' + (data.dept || '—');
+        // normalize fields
+        safeSet(displayName, data.name || data.roll || 'Unnamed');
+        safeSet(displayEmail, data.email || '—');
+        safeSet(displayRoll, 'Roll: ' + (data.roll || (userRoll || '—')));
+        safeSet(displayDept, 'Dept: ' + (data.dept || '—'));
         lastLoginEl.textContent = new Date(data.updatedAt || data.createdAt || Date.now()).toLocaleString();
-        // warnings and lock info from student object
         profilePct.textContent = calculateProfilePct(data) + '%';
 
         // avatarUrl if provided by backend
         if (data.avatarUrl) {
           avatarImg.src = data.avatarUrl;
-          localStorage.setItem('avatarData', data.avatarUrl);
+          try { localStorage.setItem('avatarData', data.avatarUrl); } catch(e){/* ignore storage errors */ }
         } else {
           showLocalAvatar();
         }
 
-        // lock status displayed too
+        // lock status
         if (data.lockedUntil) {
           const until = new Date(data.lockedUntil);
           if (until > new Date()) {
             lockState.textContent = 'Locked';
             lockState.style.color = 'var(--danger)';
             lockReason.textContent = `Until ${until.toLocaleString()}`;
-            lockMeta.innerHTML = `<div>Locked by system/admin. Penalties may apply.</div>`;
+            lockMeta.innerHTML = `<div class="mutedSmall">Locked by system/admin. Penalties may apply.</div>`;
           } else {
             lockState.textContent = 'Unlocked';
             lockState.style.color = 'var(--success)';
@@ -361,38 +415,56 @@
           lockMeta.innerHTML = '';
         }
 
-        // warnings count
+        // warnings & other small things
         renderWarningsFromProfile(data);
+
+        return data;
       } catch (err) {
         console.error('fetchProfile error', err);
+        // show fallback values
+        safeSet(displayName, 'Unnamed');
+        safeSet(displayEmail, '—');
+        safeSet(displayRoll, 'Roll: —');
+        safeSet(displayDept, 'Dept: —');
+        showLocalAvatar();
+        return null;
       }
     }
 
     async function fetchChatHistoryAndUsage() {
       try {
+        if (!userRoll) {
+          totalChatsEl.textContent = '—';
+          weeklyChatsEl.textContent = '—';
+          lastChatEl.textContent = '—';
+          return;
+        }
         const res = await fetch(`/api/chat/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
         if (!res.ok) {
-          // 403/401 or other
           totalChatsEl.textContent = '—';
           weeklyChatsEl.textContent = '—';
           lastChatEl.textContent = '—';
           return;
         }
         const history = await res.json();
-        // compute stats
-        const total = history.length;
+        const total = Array.isArray(history) ? history.length : 0;
         const oneWeekAgo = Date.now() - 7*24*3600*1000;
-        const weekly = history.filter(h => new Date(h.createdAt || h._id?.getTimestamp?.() || h.time || Date.now()) > oneWeekAgo).length;
-        const last = history[0] ? new Date(history[0].createdAt || history[0].time || Date.now()).toLocaleString() : '—';
+        const weekly = Array.isArray(history) ? history.filter(h => {
+          const d = new Date(h.createdAt || h.time || Date.now());
+          return d.getTime() > oneWeekAgo;
+        }).length : 0;
+        const last = (Array.isArray(history) && history[0]) ? new Date(history[0].createdAt || history[0].time || Date.now()).toLocaleString() : '—';
         totalChatsEl.textContent = total;
         weeklyChatsEl.textContent = weekly;
         lastChatEl.textContent = last;
       } catch (err) {
         console.error('fetchChatHistory error', err);
+        totalChatsEl.textContent = '—';
+        weeklyChatsEl.textContent = '—';
+        lastChatEl.textContent = '—';
       }
     }
 
-    // Try to fetch notices (optional endpoint). If not available, show a default message.
     async function fetchNotices() {
       try {
         const res = await fetch('/api/notices', { headers: authHeaders() });
@@ -413,24 +485,22 @@
           noticesList.appendChild(el);
         });
       } catch (err) {
-        // endpoint absent or network error
         noticesList.textContent = 'No notices at the moment.';
       }
     }
 
-    // Warnings: server may not expose detailed warnings for student role.
-    // We will try /api/admin/warnings/:roll (might 403) — if blocked, use warningsCount from profile
     async function fetchWarnings() {
       try {
+        if (!userRoll) return;
         const res = await fetch(`/api/admin/warnings/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
         if (!res.ok) {
-          // fallback to student summary (already rendered from profile)
+          // fallback: already handled in profile rendering
           return;
         }
         const data = await res.json();
         renderWarningsList(data);
       } catch (err) {
-        console.warn('fetchWarnings fallback', err);
+        // ignore; use profile's warnings
       }
     }
 
@@ -444,14 +514,14 @@
         const d = document.createElement('div');
         d.style.padding = '8px';
         d.style.borderBottom = '1px dashed rgba(255,255,255,0.06)';
-        d.innerHTML = `<strong style="color:${w.level==='high'?'#ffb4b4':'#ffd480'}">${w.level.toUpperCase()}</strong> — ${w.reason} <div style="font-size:12px;color:rgba(255,255,255,0.75)">${new Date(w.createdAt).toLocaleString()}</div>`;
+        d.innerHTML = `<strong style="color:${w.level==='high'?'#ffb4b4':'#ffd480'}">${(w.level||'low').toUpperCase()}</strong> — ${w.reason} <div style="font-size:12px;color:rgba(255,255,255,0.75)">${new Date(w.createdAt).toLocaleString()}</div>`;
         warningsContainer.appendChild(d);
       });
     }
 
     function renderWarningsFromProfile(profile) {
       warningsContainer.innerHTML = '';
-      const c = profile.warningsCount || 0;
+      const c = profile?.warningsCount || 0;
       if (c === 0) {
         warningsContainer.innerHTML = '<div class="muted">You have no warnings.</div>';
         return;
@@ -465,7 +535,7 @@
     function calculateProfilePct(data) {
       const fields = ['name','email','roll','dept','cls','avatarUrl'];
       let filled = 0;
-      fields.forEach(f=> { if (data[f]) filled++; });
+      fields.forEach(f=> { if (data && data[f]) filled++; });
       return Math.round((filled / fields.length) * 100);
     }
 
@@ -477,21 +547,17 @@
       reader.onload = async () => {
         const dataUrl = reader.result;
         avatarImg.src = dataUrl;
-        localStorage.setItem('avatarData', dataUrl);
+        try { localStorage.setItem('avatarData', dataUrl); } catch(e){}
 
         // Try to save to backend (best-effort). Server may not accept this field; if not, ignore error.
         try {
-          // We'll call POST /api/student with existing fields to update avatarUrl (if server supports it)
-          const profileRes = await fetch(`/api/student`, {
+          await fetch(`/api/student`, {
             method: 'POST',
             headers: authHeaders(),
-            body: JSON.stringify({ roll: userRoll, name: displayName.textContent, dept: displayDept.textContent.replace('Dept: ','') || '', cls: '' , avatarUrl: dataUrl })
+            body: JSON.stringify({ roll: userRoll, name: displayName.textContent, dept: (displayDept.textContent || '').replace('Dept: ','') || '', cls: '' , avatarUrl: dataUrl })
           });
-          if (profileRes.ok) {
-            console.log('avatar saved to server (if supported)');
-          }
         } catch (err) {
-          console.warn('avatar upload to server failed (fine):', err);
+          // ignore server errors for avatar save
         }
       };
       reader.readAsDataURL(f);
@@ -501,18 +567,43 @@
     openChatBtn.addEventListener('click', ()=> location.href = 'chatbot.html');
     openChatBtn2.addEventListener('click', ()=> location.href = 'chatbot.html');
     settingsBtn.addEventListener('click', ()=> location.href = 'settings.html');
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('authToken'); localStorage.removeItem('token'); localStorage.removeItem('accessToken');
-      // optionally call server logout endpoint
+
+    // Logout helper that attempts server logout then redirects
+    async function handleLogoutRedirect() {
+      try {
+        // attempt to call logout endpoint if available; best-effort
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ refreshToken: null })
+        });
+      } catch (err) {
+        // ignore network errors
+      }
+      // clear stored tokens
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('authToken');
+        localStorage.removeItem('avatarData');
+      } catch (e) {}
       location.href = 'login.html';
+    }
+
+    logoutBtn.addEventListener('click', () => {
+      if (!confirm('Logout now?')) return;
+      handleLogoutRedirect();
     });
 
     editProfileBtn.addEventListener('click', ()=> {
-      // redirect to profile edit (if you have profile.html)
-      location.href = 'profile.html' // or open edit modal
+      // redirect to profile edit page if exists
+      location.href = 'profile.html';
     });
 
-    // ---------- Real-time: socket.io ----------
+    // ---------- Real-time: socket.io (guarded) ----------
     let socket = null;
     try {
       if (typeof io !== 'undefined') {
@@ -520,7 +611,6 @@
         socket.on('connect', ()=> console.log('socket connected'));
         socket.on('warning:updated', (d)=> {
           if (d.roll === userRoll) {
-            // refresh warnings and profile
             fetchProfile(); fetchWarnings();
           }
         });
@@ -541,11 +631,11 @@
 
     // ---------- Initial load & polling ----------
     async function loadAll() {
-      await fetchProfile();
+      const profile = await fetchProfile();
       await fetchChatHistoryAndUsage();
       await fetchNotices();
-      await fetchWarnings()
-        //optional advanced warnings
+      await fetchWarnings();
+      // optional: more advanced checks (omitted)
     }
     loadAll();
     // poll every 12 seconds to refresh status
