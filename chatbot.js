@@ -218,12 +218,16 @@ async function checkSpecificLockFromServer() {
 }
 // ==================== CHATBOT REQUEST ====================
 async function askGemini(prompt) {
-  if (!studentProfile) return "Error: Profile missing.";
+  if (!studentProfile || !TOKEN) return "Error: Login required.";
 
   try {
-    const res = await secureFetch(`${API_URL}/api/chat`, {
+    // Send request with only access token
+    const res = await fetch(`${API_URL}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${TOKEN}`
+      },
       body: JSON.stringify({
         roll: studentProfile.roll,
         sender: "user",
