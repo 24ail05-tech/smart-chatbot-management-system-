@@ -2,8 +2,9 @@
 const API_URL = "https://smart-chatbot-backend-w5tq.onrender.com";
 let TOKEN = ""; // Set after login
 let csrfToken = "";
+let socket = null;
 
-// Ensure TOKEN exists
+// ==================== TOKEN & SECURITY ====================
 function ensureToken() {
   if (!TOKEN) {
     alert("Security Error: No access token found. Please log in again.");
@@ -13,23 +14,6 @@ function ensureToken() {
 }
 ensureToken();
 
-// ==================== DOM ELEMENTS ====================
-const profileSection = document.getElementById("profileSection");
-const chatSection = document.getElementById("chatSection");
-const chatBox = document.getElementById("chatBox");
-const chatInput = document.getElementById("chatInput");
-const sendBtn = document.getElementById("sendBtn");
-const profileBtn = document.getElementById("profileBtn");
-const statusMsg = document.getElementById("statusMsg");
-const bgColorInput = document.getElementById("bgColorInput");
-const studentInfoDiv = document.getElementById("studentInfo");
-
-// ==================== STATE ====================
-let studentProfile = null;
-let chatLock = false;
-let warningsCount = 0;
-
-// ==================== SECURE FETCH ====================
 async function secureFetch(url, options = {}) {
   ensureToken();
 
@@ -60,19 +44,36 @@ async function secureFetch(url, options = {}) {
   return res;
 }
 
-// ==================== INIT ====================
-window.onload = async () => {
+// ==================== DOM ELEMENTS ====================
+const profileSection = document.getElementById("profileSection");
+const chatSection = document.getElementById("chatSection");
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
+const profileBtn = document.getElementById("profileBtn");
+const statusMsg = document.getElementById("statusMsg");
+const bgColorInput = document.getElementById("bgColorInput");
+const studentInfoDiv = document.getElementById("studentInfo");
+
+// ==================== STATE ====================
+let studentProfile = null;
+let chatLock = false;
+let warningsCount = 0;
+
+// ==================== INITIAL LOAD ====================
+window.addEventListener("DOMContentLoaded", async () => {
   await loadProfile();
   await applyBackgroundColor();
   await loadChatHistory();
   await fetchWarningsAndLock();
-};
+  initSocket(); // <-- Real-time connection
+  setInterval(fetchWarningsAndLock, 12000); // Poll every 12s as fallback
+});
 
 // ==================== PROFILE ====================
 async function loadProfile() {
   try {
     if (!studentProfile?.roll) {
-      // Must get studentProfile from login or localStorage
       const savedRoll = localStorage.getItem("studentRoll");
       if (!savedRoll) throw new Error("No roll found");
       const res = await secureFetch(`${API_URL}/api/student/${savedRoll}`);
@@ -127,7 +128,6 @@ function displayStudentInfo() {
 sendBtn?.addEventListener("click", async () => {
   const message = chatInput.value.trim();
   if (!message) return;
-
   if (chatLock) return alert("⚠️ Chat is locked due to repeated violations.");
 
   await addMessage("user", message);
@@ -145,7 +145,6 @@ sendBtn?.addEventListener("click", async () => {
 
 async function addMessage(sender, text, time = null) {
   time = time || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
   const div = document.createElement("div");
   div.className = `message ${sender === "user" ? "userMsg" : "botMsg"}`;
   div.innerHTML = `<strong>[${sender === "user" ? "You" : "Bot"} - ${time}]</strong>: ${text}`;
@@ -166,7 +165,6 @@ async function loadChatHistory() {
   try {
     const res = await secureFetch(`${API_URL}/api/chat/${studentProfile.roll}`);
     if (!res.ok) return;
-
     const history = await res.json();
     history.reverse().forEach(m => addMessage(m.sender, m.message));
   } catch (err) {
@@ -241,7 +239,6 @@ async function applyBackgroundColor() {
   try {
     const res = await secureFetch(`${API_URL}/api/student/${studentProfile.roll}`);
     if (!res.ok) return;
-
     const profile = await res.json();
     document.body.style.background = profile.bgColor || "linear-gradient(135deg, #0077ff, #00d4ff)";
   } catch (err) {
@@ -258,3 +255,46 @@ bgColorInput?.addEventListener("change", async (e) => {
   });
   document.body.style.background = bg;
 });
+
+// ==================== SOCKET.IO REAL-TIME ====================
+function initSocket() {
+  if (!studentProfile?.roll) return;
+
+  try {
+    socket = io(API_URL, { auth: { token: TOKEN } });
+
+    socket.on("connect", () => console.log("Socket connected"));
+
+    socket.on("warning:updated", (d) => {
+      if (d.roll === studentProfile.roll) {
+        fetchWarningsAndLock();
+        addMessage("bot", "⚠️ A new warning has been issued.");
+      }
+    });
+
+    socket.on("student:locked", (d) => {
+      if (d.roll === studentProfile.roll) {
+        chatLock = true;
+        fetchWarningsAndLock();
+        addMessage("bot", "⚠️ Chat has been locked.");
+      }
+    });
+
+    socket.on("student:unlocked", (d) => {
+      if (d.roll === studentProfile.roll) {
+        chatLock = false;
+        fetchWarningsAndLock();
+        addMessage("bot", "✅ Chat has been unlocked.");
+      }
+    });
+
+    socket.on("chat:new", (chat) => {
+      if (chat.roll === studentProfile.roll && chat.sender === "bot") {
+        addMessage("bot", chat.message);
+      }
+    });
+
+  } catch (err) {
+    console.warn("Socket.IO not available:", err);
+  }
+}
