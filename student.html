@@ -17,6 +17,8 @@
     --danger: #ff4d4f;
     --muted: rgba(255,255,255,0.85);
   }
+  html.dark-mode { --glass: rgba(30,30,30,0.9); --glass-2: rgba(20,20,20,0.8); --accent: #00a8ff; --accent-2: #00d4ff; --muted: rgba(200,200,200,0.9); }
+  html.dark-mode body { background: linear-gradient(135deg,#0a0e27,#1a1f3a); }
   *{box-sizing:border-box}
   body{
     margin:0;
@@ -26,6 +28,7 @@
     color:#fff;
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
+    transition: background 0.3s ease;
   }
 
   .wrap{
@@ -158,6 +161,9 @@
         <h1>Nandha Chatbot</h1>
       </div>
       <div class="top-actions">
+        <div title="Toggle Dark Mode" class="icon-btn" id="darkModeToggle">🌙</div>
+        <div title="Refresh Data" class="icon-btn" id="refreshDataBtn">🔄</div>
+        <div title="Export Data" class="icon-btn" id="exportBtn">📥</div>
         <div title="Settings" class="icon-btn" id="settingsBtn">⚙️</div>
         <div title="Logout" class="icon-btn" id="logoutBtn">⎋</div>
       </div>
@@ -509,7 +515,51 @@
     }
   } catch(err){ console.warn('socket.io not available', err); }
 
+  // ========== MODERN FEATURES ==========
+  
+  // Dark Mode Toggle
+  function initDarkMode() {
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    if (isDark) document.documentElement.classList.add('dark-mode');
+  }
+  
+  document.getElementById('darkModeToggle').addEventListener('click', () => {
+    const isDark = document.documentElement.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', isDark);
+  });
+
+  // Refresh Data
+  document.getElementById('refreshDataBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('refreshDataBtn');
+    btn.style.animation = 'spin 0.6s linear';
+    await loadAll();
+    setTimeout(() => btn.style.animation = '', 600);
+  });
+
+  // Export Chat History as JSON
+  document.getElementById('exportBtn').addEventListener('click', async () => {
+    try {
+      const res = await fetch(`${API}/api/chat/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
+      if (!res.ok) { alert('Failed to export'); return; }
+      const history = await res.json();
+      const dataStr = JSON.stringify(history, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `chat-history-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch(err) { alert('Export failed'); console.error(err); }
+  });
+
+  // Add spin animation
+  const style = document.createElement('style');
+  style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+  document.head.appendChild(style);
+
   // ---------- Initial load & polling ----------
+  initDarkMode();
   async function loadAll() { await fetchProfile(); await fetchChatHistoryAndUsage(); await fetchNotices(); await fetchWarnings(); }
   loadAll();
   const poll = setInterval(loadAll, 12000);
