@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import helmet from "helmet";
 import bcrypt from "bcryptjs";
@@ -86,9 +85,12 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use(bodyParser.json({ limit: "1mb" }));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 if (NODE_ENV !== "production") app.use(morgan("dev"));
+
+// Serve static files (HTML, CSS, JS)
+app.use(express.static(".", { extensions: ["html"] }));
 
 // ---------------------- Utility helpers ----------------------
 function generateTokenId() {
@@ -412,6 +414,11 @@ app.get("/api/csrf-token", (req, res) => {
 
 // ---------------------- Health & Auth ----------------------
 app.get("/api/health", (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+// Root route
+app.get("/", (req, res) => {
+  res.sendFile("index.html", { root: "." });
+});
 
 // Auth: register
 app.post("/api/auth/register", csrfProtect, async (req, res) => {

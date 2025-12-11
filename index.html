@@ -87,7 +87,7 @@ loginBtn.addEventListener("click",async()=>{
     sessionStorage.setItem("userProfile",JSON.stringify(data.student));
 
     // redirect
-    if(data.student.role==="admin") window.location.href="admin-dashboard.html";
+    if(data.student.role==="admin") window.location.href="admin.html";
     else window.location.href="student.html";
 
   }catch{loginError.textContent="Server error, try later.";}
