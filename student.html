@@ -266,7 +266,7 @@
 
   const token = readStoredToken();
   if (!token) {
-    setTimeout(()=> location.href = 'login.html', 200);
+    setTimeout(()=> location.href = 'index.html', 200);
     throw new Error('Not authenticated');
   }
 
@@ -489,7 +489,7 @@
       ['token','accessToken','authToken'].forEach(k=>{ localStorage.removeItem(k); sessionStorage.removeItem(k); });
       localStorage.removeItem('avatarData');
     } catch(e){}
-    location.href = 'login.html';
+    location.href = 'index.html';
   }
 
   logoutBtn.addEventListener('click', ()=> { if(confirm('Logout now?')) handleLogoutRedirect(); });
