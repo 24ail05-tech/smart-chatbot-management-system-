@@ -219,6 +219,36 @@ const appealSchema = new Schema(
 );
 const Appeal = mongoose.model("Appeal", appealSchema);
 
+// SystemMessage model for automated messages
+const systemMessageSchema = new Schema(
+  {
+    recipientRoll: { type: String, index: true },
+    title: String,
+    content: String,
+    type: { type: String, enum: ["info", "warning", "alert", "system", "broadcast"], default: "info" },
+    isRead: { type: Boolean, default: false },
+    scheduledFor: { type: Date, default: null },
+    trigger: { type: String, enum: ["manual", "locked", "warned", "auto-scheduled"], default: "manual" },
+    sentAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+const SystemMessage = mongoose.model("SystemMessage", systemMessageSchema);
+
+// MessageTemplate model for predefined messages
+const messageTemplateSchema = new Schema(
+  {
+    name: String,
+    title: String,
+    content: String,
+    type: { type: String, enum: ["info", "warning", "alert"], default: "info" },
+    category: { type: String, enum: ["system", "academic", "conduct", "custom"], default: "custom" },
+  },
+  { timestamps: true }
+);
+const MessageTemplate = mongoose.model("MessageTemplate", messageTemplateSchema);
+
 // ---------------------- JWT helpers ----------------------
 function signAccessToken(student) {
   const payload = { sub: student.roll, role: student.role };
@@ -393,8 +423,9 @@ const registerSchema = Joi.object({
   name: Joi.string().required(),
   dept: Joi.string().required(),
   cls: Joi.string().required(),
+  email: Joi.string().email().optional().allow(""),
   password: Joi.string().min(8).max(128).required(),
-});
+}).unknown(false);
 const loginSchema = Joi.object({ roll: Joi.string().required(), password: Joi.string().required() });
 
 // ---------------------- CSRF (double-submit cookie) ----------------------
@@ -430,12 +461,12 @@ app.post("/api/auth/register", csrfProtect, async (req, res) => {
     const { error, value } = registerSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.message });
 
-    const { roll, name, dept, cls, password } = value;
+    const { roll, name, dept, cls, email, password } = value;
     const existing = await Student.findOne({ roll });
     if (existing) return res.status(409).json({ error: "Roll already registered" });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const student = new Student({ roll, name, dept, cls, passwordHash });
+    const student = new Student({ roll, name, dept, cls, email: email || "", passwordHash });
     await student.save();
 
     // Use an atomic update to add refresh token (avoid VersionError)
@@ -1135,6 +1166,12 @@ app.get("/api/dashboard/status", authenticate, csrfProtect, async (req, res) => 
     const weeklyChats = await ChatHistory.countDocuments({ roll, createdAt: { $gte: weekAgo } });
     const lastChat = await ChatHistory.findOne({ roll }).sort({ createdAt: -1 }).lean();
     const notices = await Notice.find().sort({ createdAt: -1 }).limit(20).lean();
+    
+    // Include system messages for this student
+    const systemMessages = await SystemMessage.find({ 
+      recipientRoll: roll, 
+      expiresAt: { $gt: new Date() } 
+    }).sort({ createdAt: -1 }).limit(10).lean();
 
     res.json({
       profile: student,
@@ -1142,9 +1179,231 @@ app.get("/api/dashboard/status", authenticate, csrfProtect, async (req, res) => 
       activeLock,
       usage: { totalChats, weeklyChats, lastChat: lastChat ? lastChat.createdAt : null },
       notices,
+      systemMessages,
     });
   } catch (err) {
     console.error("dashboard status error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ---------------------- Automated Messaging System ----------------------
+
+// Get system messages for student
+app.get("/api/student/messages", authenticate, csrfProtect, async (req, res) => {
+  try {
+    const messages = await SystemMessage.find({ 
+      recipientRoll: req.student.roll,
+      expiresAt: { $gt: new Date() }
+    }).sort({ createdAt: -1 }).limit(50).lean();
+    
+    res.json({ messages });
+  } catch(err) {
+    console.error("get messages error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Mark message as read
+app.post("/api/student/messages/:id/read", authenticate, csrfProtect, async (req, res) => {
+  try {
+    await SystemMessage.updateOne(
+      { _id: req.params.id, recipientRoll: req.student.roll },
+      { $set: { isRead: true } }
+    );
+    res.json({ ok: true });
+  } catch(err) {
+    console.error("mark read error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: Send system message to student(s)
+app.post("/api/admin/send-message", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { recipients, title, content, type, scheduledFor } = req.body;
+    
+    if (!recipients || !title || !content) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const messages = recipients.map(roll => ({
+      recipientRoll: roll,
+      title,
+      content,
+      type: type || "info",
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+      trigger: "manual",
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000), // 30 days expiry
+    }));
+
+    const inserted = await SystemMessage.insertMany(messages);
+    
+    // Broadcast via Socket.IO if not scheduled
+    if (!scheduledFor) {
+      recipients.forEach(roll => {
+        io.emit(`message:${roll}`, { 
+          title, 
+          content, 
+          type, 
+          sentAt: new Date() 
+        });
+      });
+    }
+
+    res.status(201).json({ 
+      ok: true, 
+      sentTo: recipients.length, 
+      scheduled: scheduledFor ? true : false 
+    });
+  } catch(err) {
+    console.error("send message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: Send broadcast message to all/filtered students
+app.post("/api/admin/broadcast-message", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { title, content, type, filter } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Build filter query
+    let query = {};
+    if (filter?.dept) query.dept = filter.dept;
+    if (filter?.cls) query.cls = filter.cls;
+    if (filter?.locked) query.locked = filter.locked;
+
+    const students = await Student.find(query).select("roll").lean();
+    const rolls = students.map(s => s.roll);
+
+    const messages = rolls.map(roll => ({
+      recipientRoll: roll,
+      title,
+      content,
+      type: type || "info",
+      trigger: "manual",
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+    }));
+
+    await SystemMessage.insertMany(messages);
+
+    // Broadcast via Socket.IO
+    rolls.forEach(roll => {
+      io.emit(`message:${roll}`, { title, content, type, sentAt: new Date() });
+    });
+
+    res.status(201).json({ ok: true, sentTo: rolls.length });
+  } catch(err) {
+    console.error("broadcast message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: Get message templates
+app.get("/api/admin/message-templates", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const templates = await MessageTemplate.find().lean();
+    res.json({ templates });
+  } catch(err) {
+    console.error("get templates error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: Create message template
+app.post("/api/admin/message-templates", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { name, title, content, type, category } = req.body;
+    
+    const template = new MessageTemplate({ name, title, content, type, category });
+    await template.save();
+    
+    res.status(201).json({ ok: true, template });
+  } catch(err) {
+    console.error("create template error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Admin: Send message using template
+app.post("/api/admin/send-template-message", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { templateId, recipients } = req.body;
+    
+    const template = await MessageTemplate.findById(templateId);
+    if (!template) return res.status(404).json({ error: "Template not found" });
+
+    const messages = recipients.map(roll => ({
+      recipientRoll: roll,
+      title: template.title,
+      content: template.content,
+      type: template.type,
+      trigger: "manual",
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+    }));
+
+    await SystemMessage.insertMany(messages);
+
+    recipients.forEach(roll => {
+      io.emit(`message:${roll}`, { 
+        title: template.title, 
+        content: template.content, 
+        type: template.type,
+        sentAt: new Date() 
+      });
+    });
+
+    res.status(201).json({ ok: true, sentTo: recipients.length });
+  } catch(err) {
+    console.error("template message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Auto-send message when account is locked
+app.post("/api/admin/lock", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { roll, reason, hours } = req.body;
+    
+    const student = await Student.findOne({ roll });
+    if (!student) return res.status(404).json({ error: "Student not found" });
+
+    const lockDuration = hours ? new Date(Date.now() + hours * 3600 * 1000) : new Date(Date.now() + 24 * 3600 * 1000);
+    
+    await Student.updateOne(
+      { roll },
+      { $set: { lockedUntil: lockDuration } }
+    );
+
+    const lock = new Lock({ roll, reason, lockedBy: req.student.roll, expiresAt: lockDuration });
+    await lock.save();
+
+    // Auto-send lock notification message
+    const lockMessage = new SystemMessage({
+      recipientRoll: roll,
+      title: "⛔ Account Locked",
+      content: `Your account has been locked. Reason: ${reason || "Policy violation"}. It will be unlocked on ${lockDuration.toLocaleDateString()}. Contact admin if you believe this is a mistake.`,
+      type: "alert",
+      trigger: "locked",
+      expiresAt: lockDuration,
+    });
+    await lockMessage.save();
+
+    // Notify via Socket.IO
+    io.emit(`message:${roll}`, {
+      title: "⛔ Account Locked",
+      content: lockMessage.content,
+      type: "alert",
+      sentAt: new Date(),
+    });
+
+    res.json({ ok: true, message: "Account locked and notification sent" });
+  } catch(err) {
+    console.error("lock error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
