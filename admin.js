@@ -332,22 +332,41 @@ function useTemplate(templateId) {
 
 // ========== 7. COURSE PLANS ==========
 async function uploadCoursePlan() {
-  const name = document.getElementById('planName')?.value;
+  const fileInput = document.getElementById('planFile');
+  const nameInput = document.getElementById('planName');
   
-  if (!name) return alert('Enter plan name');
+  if (!fileInput || !fileInput.files.length) return alert('Select a PDF file');
   
-  const res = await secureFetch(`${API}/api/course-plan`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name })
-  });
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('name', nameInput?.value || file.name);
   
-  if (res && res.ok) {
-    alert('✅ Course plan added');
-    document.getElementById('planName').value = '';
-    loadCoursePlans();
-  } else {
-    alert('❌ Failed to add course plan');
+  const token = getToken();
+  const csrf = getCSRF();
+  
+  try {
+    const res = await fetch(`${API}/api/course-plan`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-csrf-token': csrf
+      },
+      credentials: 'include',
+      body: formData
+    });
+    
+    if (res && res.ok) {
+      alert('✅ Course plan uploaded successfully');
+      fileInput.value = '';
+      nameInput.value = '';
+      loadCoursePlans();
+    } else {
+      alert('❌ Upload failed: ' + (await res.text()));
+    }
+  } catch (err) {
+    console.error('Upload error:', err);
+    alert('❌ Upload error: ' + err.message);
   }
 }
 
@@ -364,9 +383,27 @@ async function loadCoursePlans() {
     row.innerHTML = `
       <td>${escapeHTML(p.name)}</td>
       <td>${new Date(p.uploadedAt).toLocaleString()}</td>
+      <td>
+        <button class="btn-small" onclick="deleteCoursePlan('${p._id}')">Delete</button>
+      </td>
     `;
     table.appendChild(row);
   });
+}
+
+async function deleteCoursePlan(planId) {
+  if (!confirm('Delete this course plan?')) return;
+  
+  const res = await secureFetch(`${API}/api/course-plan/${planId}`, {
+    method: 'DELETE'
+  });
+  
+  if (res && res.ok) {
+    alert('✅ Course plan deleted');
+    loadCoursePlans();
+  } else {
+    alert('❌ Failed to delete course plan');
+  }
 }
 
 // ========== 8. APPEALS ==========
