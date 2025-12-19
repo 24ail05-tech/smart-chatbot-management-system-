@@ -159,12 +159,39 @@
   /* small helper */
   .mutedSmall { font-size:13px; opacity:0.85; color:rgba(255,255,255,0.9); }
 
+  /* Cosmetics Modal */
+  .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(8px); }
+  .modal-overlay.active { display:flex; }
+  .modal-content { background:linear-gradient(135deg, #1e293b, #0f172a); border-radius:20px; padding:25px; max-width:700px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.5); position:relative; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid rgba(255,255,255,0.1); padding-bottom:12px; }
+  .modal-close { font-size:28px; cursor:pointer; color:#fff; line-height:1; }
+  .modal-close:hover { color:#f87171; }
+  .cosmetic-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; margin-top:14px; }
+  .cosmetic-card { background:rgba(255,255,255,0.08); border-radius:12px; padding:14px; position:relative; border:2px solid transparent; transition:all 0.3s; }
+  .cosmetic-card.legendary { border-color:#fbbf24; background:linear-gradient(135deg, rgba(251,191,36,0.15), rgba(217,119,6,0.15)); }
+  .cosmetic-card.eternal { border-color:#a78bfa; background:linear-gradient(135deg, rgba(167,139,250,0.15), rgba(139,92,246,0.15)); box-shadow:0 0 20px rgba(167,139,250,0.3); }
+  .cosmetic-card.rare { border-color:#60a5fa; }
+  .cosmetic-card.equipped { border-color:#10b981; box-shadow:0 0 15px rgba(16,185,129,0.4); }
+  .cosmetic-card h4 { margin:0 0 8px; font-size:15px; display:flex; align-items:center; gap:6px; }
+  .tier-badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; }
+  .tier-badge.legendary { background:#fbbf24; color:#000; }
+  .tier-badge.eternal { background:#a78bfa; color:#000; animation:eternal-glow 2s infinite; }
+  .tier-badge.rare { background:#60a5fa; color:#000; }
+  @keyframes eternal-glow { 0%, 100% { box-shadow:0 0 10px rgba(167,139,250,0.8); } 50% { box-shadow:0 0 20px rgba(167,139,250,1); } }
+  .cosmetic-preview { margin:10px 0; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2); text-align:center; font-size:13px; }
+  .equip-btn { width:100%; padding:10px; border:none; border-radius:8px; font-weight:600; cursor:pointer; background:#3b82f6; color:#fff; margin-top:8px; transition:0.3s; }
+  .equip-btn:hover { background:#60a5fa; transform:translateY(-2px); }
+  .equip-btn.equipped { background:#10b981; cursor:default; }
+  .equip-btn:disabled { background:#6b7280; cursor:not-allowed; }
+  .lock-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); border-radius:12px; display:flex; justify-content:center; align-items:center; font-size:32px; }
+
   /* Responsive */
   @media (max-width:980px){
     .wrap{grid-template-columns: 1fr; padding:12px}
     .status-grid{grid-template-columns: 1fr}
     .right-col{grid-auto-rows:auto}
     header.topbar{flex-direction:column;align-items:flex-start;gap:8px}
+    .cosmetic-grid { grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -211,6 +238,7 @@
         <div class="profile-actions">
           <button class="btn primary" id="editProfileBtn">Edit Profile</button>
           <button class="btn ghost small" id="openChatBtn">Open Chat</button>
+          <button class="btn ghost small" onclick="openCosmeticsModal()" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6);color:#fff;">✨ Cosmetics</button>
         </div>
 
         <div style="margin-top:12px;font-size:13px;color:rgba(255,255,255,0.9)">
@@ -241,13 +269,22 @@
           </div>
         </div>
 
-        <div class="status-card" id="lockCard">
-          <h3>Account / Chat Lock Status</h3>
-          <div id="lockStatus" class="status-row">
-            <div><strong id="lockState">Loading…</strong></div>
-            <div id="lockReason" class="muted" style="font-size:13px"></div>
+        <div class="status-card" id="accountLockCard">
+          <h3>🔐 Account Lock Status</h3>
+          <div id="accountLockStatus" class="status-row">
+            <div><strong id="accountLockState">Loading…</strong></div>
+            <div id="accountLockReason" class="muted" style="font-size:13px"></div>
           </div>
-          <div style="margin-top:10px" id="lockMeta"></div>
+          <div style="margin-top:10px" id="accountLockMeta"></div>
+        </div>
+
+        <div class="status-card" id="chatbotLockCard">
+          <h3>💬 Chatbot Access Status</h3>
+          <div id="chatbotLockStatus" class="status-row">
+            <div><strong id="chatbotLockState">Loading…</strong></div>
+            <div id="chatbotLockReason" class="muted" style="font-size:13px"></div>
+          </div>
+          <div style="margin-top:10px" id="chatbotLockMeta"></div>
         </div>
       </div>
 
@@ -363,9 +400,12 @@
   const settingsBtn = document.getElementById('settingsBtn');
 
   const warningsContainer = document.getElementById('warningsContainer');
-  const lockState = document.getElementById('lockState');
-  const lockReason = document.getElementById('lockReason');
-  const lockMeta = document.getElementById('lockMeta');
+  const accountLockState = document.getElementById('accountLockState');
+  const accountLockReason = document.getElementById('accountLockReason');
+  const accountLockMeta = document.getElementById('accountLockMeta');
+  const chatbotLockState = document.getElementById('chatbotLockState');
+  const chatbotLockReason = document.getElementById('chatbotLockReason');
+  const chatbotLockMeta = document.getElementById('chatbotLockMeta');
   const noticesList = document.getElementById('noticesList');
   const mailList = document.getElementById('mailList');
 
@@ -532,24 +572,46 @@
         try { localStorage.setItem('avatarData', data.avatarUrl); } catch(e){}
       } else showLocalAvatar();
 
+      // Account Lock Status
       if (data.lockedUntil) {
         const until = new Date(data.lockedUntil);
         if (until > new Date()) {
-          lockState.textContent = 'Locked';
-          lockState.style.color = 'var(--danger)';
-          lockReason.textContent = `Until ${until.toLocaleString()}`;
-          lockMeta.innerHTML = `<div class="mutedSmall">Locked by system/admin. Penalties may apply.</div>`;
+          accountLockState.textContent = '🔒 Locked';
+          accountLockState.style.color = 'var(--danger)';
+          accountLockReason.textContent = `Until ${until.toLocaleString()}`;
+          accountLockMeta.innerHTML = `<div class="mutedSmall">Account locked by admin. Cannot access system features.</div>`;
         } else {
-          lockState.textContent = 'Unlocked';
-          lockState.style.color = 'var(--success)';
-          lockReason.textContent = '';
-          lockMeta.innerHTML = '';
+          accountLockState.textContent = '✅ Active';
+          accountLockState.style.color = 'var(--success)';
+          accountLockReason.textContent = '';
+          accountLockMeta.innerHTML = '';
         }
       } else {
-        lockState.textContent = 'Unlocked';
-        lockState.style.color = 'var(--success)';
-        lockReason.textContent = '';
-        lockMeta.innerHTML = '';
+        accountLockState.textContent = '✅ Active';
+        accountLockState.style.color = 'var(--success)';
+        accountLockReason.textContent = '';
+        accountLockMeta.innerHTML = '';
+      }
+
+      // Chatbot Lock Status (separate from account lock)
+      if (data.chatbotLockedUntil) {
+        const until = new Date(data.chatbotLockedUntil);
+        if (until > new Date()) {
+          chatbotLockState.textContent = '🚫 Locked';
+          chatbotLockState.style.color = 'var(--danger)';
+          chatbotLockReason.textContent = `Until ${until.toLocaleString()}`;
+          chatbotLockMeta.innerHTML = `<div class="mutedSmall">Reason: ${data.chatbotLockReason || 'Policy violation'}. Cannot use chatbot.</div>`;
+        } else {
+          chatbotLockState.textContent = '✅ Accessible';
+          chatbotLockState.style.color = 'var(--success)';
+          chatbotLockReason.textContent = '';
+          chatbotLockMeta.innerHTML = '';
+        }
+      } else {
+        chatbotLockState.textContent = '✅ Accessible';
+        chatbotLockState.style.color = 'var(--success)';
+        chatbotLockReason.textContent = '';
+        chatbotLockMeta.innerHTML = '';
       }
 
       applyCosmetics(data.settings);
@@ -781,6 +843,160 @@
 
   window.addEventListener('beforeunload', ()=> { clearInterval(poll); if(socket) socket.disconnect(); });
   showLocalAvatar();
+
+  // ==================== COSMETICS MODAL ====================
+  const cosmeticsModal = document.createElement('div');
+  cosmeticsModal.className = 'modal-overlay';
+  cosmeticsModal.id = 'cosmeticsModal';
+  cosmeticsModal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>✨ Cosmetics Inventory</h2>
+        <span class="modal-close" onclick="closeCosmeticsModal()">×</span>
+      </div>
+      <div id="cosmeticsContainer"></div>
+    </div>
+  `;
+  document.body.appendChild(cosmeticsModal);
+
+  // Cosmetics catalog with legendary & eternal tiers
+  const COSMETICS_CATALOG = {
+    avatarBorders: [
+      { value:'glow-blue', label:'Glow Blue', tier:'rare', preview:'🔵 Blue Glow' },
+      { value:'gold', label:'Gold Border', tier:'rare', preview:'🟡 Gold' },
+      { value:'neon-pink', label:'Neon Pink', tier:'rare', preview:'🌸 Pink' },
+      { value:'dragon-fire', label:'Dragon Fire', tier:'legendary', preview:'🔥 Animated Fire' },
+      { value:'celestial-aura', label:'Celestial Aura', tier:'eternal', preview:'⭐ Galaxy Aura' }
+    ],
+    nameStyles: [
+      { value:'gradient-gold', label:'Gradient Gold', tier:'rare', preview:'Golden Text' },
+      { value:'neon', label:'Neon Glow', tier:'rare', preview:'Neon Text' },
+      { value:'diamond-shine', label:'Diamond Shine', tier:'legendary', preview:'💎 Shimmering' },
+      { value:'cosmic-energy', label:'Cosmic Energy', tier:'eternal', preview:'🌌 Cosmic' }
+    ],
+    animatedNameEffects: [
+      { value:'rainbow-wave', label:'Rainbow Wave', tier:'rare', preview:'🌈 Wave' },
+      { value:'shimmer', label:'Shimmer', tier:'rare', preview:'✨ Shimmer' },
+      { value:'phoenix-blaze', label:'Phoenix Blaze', tier:'legendary', preview:'🔥 Phoenix' },
+      { value:'void-pulse', label:'Void Pulse', tier:'eternal', preview:'🌀 Void Energy' }
+    ],
+    animatedBorders: [
+      { value:'pulse-glow', label:'Pulsing Glow', tier:'rare', preview:'🌟 Pulse' },
+      { value:'rainbow-spin', label:'Rainbow Spin', tier:'rare', preview:'🎨 Spin' },
+      { value:'lightning-strike', label:'Lightning Strike', tier:'legendary', preview:'⚡ Lightning' },
+      { value:'quantum-field', label:'Quantum Field', tier:'eternal', preview:'⚛️ Quantum' }
+    ],
+    titleEffects: [
+      { value:'crown', label:'Crown', tier:'rare', preview:'👑 Royal' },
+      { value:'halo', label:'Halo', tier:'rare', preview:'⭐ Holy' },
+      { value:'emperor-crown', label:'Emperor Crown', tier:'legendary', preview:'👑✨ Emperor' },
+      { value:'god-mode', label:'God Mode', tier:'eternal', preview:'☀️ Divine' }
+    ],
+    chatColors: [
+      { value:'#60a5fa', label:'Sky Blue', tier:'rare', preview:'#60a5fa' },
+      { value:'#f59e0b', label:'Amber', tier:'rare', preview:'#f59e0b' },
+      { value:'#34d399', label:'Emerald', tier:'rare', preview:'#34d399' },
+      { value:'#ec4899', label:'Pink', tier:'rare', preview:'#ec4899' },
+      { value:'#fbbf24', label:'Legendary Gold', tier:'legendary', preview:'#fbbf24' },
+      { value:'#a78bfa', label:'Eternal Purple', tier:'eternal', preview:'#a78bfa' }
+    ],
+    backgrounds: [
+      { value:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200', label:'Aurora', tier:'rare' },
+      { value:'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1200', label:'Mountains', tier:'rare' },
+      { value:'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1200', label:'Starfield', tier:'legendary' },
+      { value:'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200', label:'Cosmic Realm', tier:'eternal' }
+    ]
+  };
+
+  function openCosmeticsModal() {
+    document.getElementById('cosmeticsModal').classList.add('active');
+    renderCosmetics();
+  }
+
+  function closeCosmeticsModal() {
+    document.getElementById('cosmeticsModal').classList.remove('active');
+  }
+
+  function isUnlockedCosmetic(type, value) {
+    if (!currentProfile || !currentProfile.settings) return false;
+    const unlocked = currentProfile.settings.unlocked || {};
+    const list = unlocked[type] || [];
+    return Array.isArray(list) && list.includes(value);
+  }
+
+  function currentEquippedCosmetic(type) {
+    if (!currentProfile || !currentProfile.settings) return null;
+    const cos = currentProfile.settings.cosmetics || {};
+    if (type === 'avatarBorders') return cos.avatarBorder || null;
+    if (type === 'nameStyles') return cos.nameStyle || null;
+    if (type === 'animatedNameEffects') return cos.animatedNameEffect || null;
+    if (type === 'animatedBorders') return cos.animatedBorder || null;
+    if (type === 'titleEffects') return cos.titleEffect || null;
+    if (type === 'chatColors') return cos.chatColor || null;
+    if (type === 'backgrounds') return cos.backgroundUrl || null;
+    return null;
+  }
+
+  async function equipCosmeticItem(type, value) {
+    const body = { cosmetics: {} };
+    if (type === 'avatarBorders') body.cosmetics.avatarBorder = value;
+    else if (type === 'nameStyles') body.cosmetics.nameStyle = value;
+    else if (type === 'animatedNameEffects') body.cosmetics.animatedNameEffect = value;
+    else if (type === 'animatedBorders') body.cosmetics.animatedBorder = value;
+    else if (type === 'titleEffects') body.cosmetics.titleEffect = value;
+    else if (type === 'chatColors') body.cosmetics.chatColor = value;
+    else if (type === 'backgrounds') body.cosmetics.backgroundUrl = value;
+
+    try {
+      const res = await fetch(`${API}/api/me/settings`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
+      if (!res.ok) throw new Error('Failed to equip');
+      const data = await res.json();
+      currentProfile = data;
+      renderCosmetics();
+      applyCosmetics();
+      alert('✅ Cosmetic equipped!');
+    } catch (e) {
+      alert('❌ Failed to equip cosmetic');
+      console.error(e);
+    }
+  }
+
+  function renderCosmetics() {
+    const container = document.getElementById('cosmeticsContainer');
+    let html = '';
+
+    for (const [type, items] of Object.entries(COSMETICS_CATALOG)) {
+      const typeLabel = type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      html += `<h3 style="margin:20px 0 10px; color:#93c5fd;">${typeLabel}</h3><div class="cosmetic-grid">`;
+
+      items.forEach(item => {
+        const unlocked = isUnlockedCosmetic(type, item.value);
+        const equipped = currentEquippedCosmetic(type) === item.value;
+        const tierClass = item.tier || 'rare';
+        const tierBadge = `<span class="tier-badge ${tierClass}">${item.tier}</span>`;
+
+        html += `
+          <div class="cosmetic-card ${tierClass} ${equipped ? 'equipped' : ''}">
+            ${!unlocked ? '<div class="lock-overlay">🔒</div>' : ''}
+            <h4>${item.label} ${tierBadge}</h4>
+            <div class="cosmetic-preview">${item.preview || item.label}</div>
+            <button class="equip-btn ${equipped ? 'equipped' : ''}" 
+                    onclick="equipCosmeticItem('${type}', '${item.value}')" 
+                    ${!unlocked || equipped ? 'disabled' : ''}>
+              ${equipped ? '✅ Equipped' : (unlocked ? 'Equip' : '🔒 Locked')}
+            </button>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  // Settings button click handler
+  document.getElementById('settingsBtn').addEventListener('click', openCosmeticsModal);
                              </script>
 
               
