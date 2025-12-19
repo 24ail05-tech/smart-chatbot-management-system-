@@ -135,6 +135,9 @@ const studentSchema = new Schema(
     warningsCount: { type: Number, default: 0 },
     locked: { type: Boolean, default: false },
     lockedUntil: { type: Date, default: null },
+    chatbotLocked: { type: Boolean, default: false },
+    chatbotLockedUntil: { type: Date, default: null },
+    chatbotLockReason: { type: String, default: "" },
     verified: { type: Boolean, default: false },
     verifiedBadge: {
       isActive: { type: Boolean, default: false },
@@ -978,6 +981,15 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
       return res.status(403).json({ error: "Account locked", lockedUntil: student.lockedUntil });
     }
 
+    // Check chatbot-specific lock (separate from account lock)
+    if (student.chatbotLockedUntil && new Date(student.chatbotLockedUntil) > new Date()) {
+      return res.status(403).json({ 
+        error: "Chatbot access locked due to violation", 
+        chatbotLockedUntil: student.chatbotLockedUntil,
+        reason: student.chatbotLockReason || "Policy violation"
+      });
+    }
+
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const chat = new ChatHistory({ roll: value.roll, sender: value.sender, message: value.message, time });
     await chat.save();
@@ -988,10 +1000,24 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
       try {
         const plans = await CoursePlan.find().sort({ uploadedAt: -1 }).limit(5);
         const plan = plans[0];
-        const text = (plan?.content || '').trim();
-        if (!text) {
-          return res.status(403).json({ error: "course related clarification only allowed" });
+        let text = (plan?.content || '').trim();
+        
+        // Filter out non-readable/encoded content (base64, binary, etc.)
+        const isPrintableText = (str) => {
+          if (!str || str.length === 0) return false;
+          // Check if text has reasonable amount of printable ASCII/readable chars
+          const printableChars = str.split('').filter(c => {
+            const code = c.charCodeAt(0);
+            return (code >= 32 && code <= 126) || code === 10 || code === 13 || code === 9;
+          }).length;
+          const ratio = printableChars / str.length;
+          return ratio > 0.7; // At least 70% should be readable
+        };
+        
+        if (!text || !isPrintableText(text)) {
+          return res.status(403).json({ error: "No readable course content available. Please re-upload course plan as PDF." });
         }
+        
         const q = (value.message || '').trim();
         const tokens = q.toLowerCase().split(/\W+/).filter(Boolean);
         let bestIdx = -1;

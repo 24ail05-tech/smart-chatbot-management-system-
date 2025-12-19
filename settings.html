@@ -236,7 +236,12 @@
            sessionStorage.getItem('authToken') || null;
   }
   const token = readStoredToken();
-  if (!token) { setTimeout(()=> location.href = 'index.html', 200); throw new Error('Not authenticated'); }
+  
+  if (!token) { 
+    console.error('No authentication token found');
+    document.body.innerHTML = '<div style="color:white;padding:20px;text-align:center;">Authentication required. Redirecting...';
+    setTimeout(()=> location.href = 'index.html', 2000);
+  }
 
   let csrfToken = "";
   async function loadCSRF() {
@@ -510,9 +515,24 @@
 
   async function loadSettings() {
     try {
+      console.log('Loading settings from:', API);
       const res = await fetch(`${API}/api/me`, { headers: authHeaders() });
+      console.log('Response status:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Load settings failed:', res.status, res.statusText, errorText);
+        document.body.innerHTML = `<div style="color:white;padding:20px;text-align:center;font-family:Poppins,sans-serif;background:linear-gradient(135deg, #0077ff, #00d4ff);min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><h2>Error Loading Settings</h2><p>Status: ${res.status} ${res.statusText}</p><p>${errorText || 'Unknown error'}</p><button onclick="location.reload()" style="padding:10px 20px;margin-top:10px;cursor:pointer;background:#005eff;color:white;border:none;border-radius:8px;font-weight:600;">Retry</button></div>`;
+        return;
+      }
       const data = await res.json();
-      if (!data || !data.settings) return;
+      console.log('Profile data:', data);
+      
+      if (!data || !data.settings) {
+        console.error('Invalid response data - no settings object');
+        document.body.innerHTML = `<div style="color:white;padding:20px;text-align:center;font-family:Poppins,sans-serif;background:linear-gradient(135deg, #0077ff, #00d4ff);min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><h2>Settings Not Found</h2><p>Your profile doesn't have settings configured.</p><button onclick="location.href='student.html'" style="padding:10px 20px;margin-top:10px;cursor:pointer;background:#005eff;color:white;border:none;border-radius:8px;font-weight:600;">Go to Dashboard</button></div>`;
+        return;
+      }
 
       profile = data;
 
@@ -522,8 +542,10 @@
       safeMode.checked = !!data.settings.safeMode;
 
       renderInventory();
+      console.log('Settings loaded successfully');
     } catch (err) {
-      console.error(err);
+      console.error('Settings load error:', err);
+      document.body.innerHTML = `<div style="color:white;padding:20px;text-align:center;font-family:Poppins,sans-serif;background:linear-gradient(135deg, #0077ff, #00d4ff);min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><h2>Error: ${err.message}</h2><button onclick="location.reload()" style="padding:10px 20px;margin-top:10px;cursor:pointer;background:#005eff;color:white;border:none;border-radius:8px;font-weight:600;">Retry</button></div>`;
     }
   }
 
