@@ -226,8 +226,8 @@
             <p id="displayEmail" class="muted">email@example.com</p>
             <div id="verifiedBadge" style="margin-top:4px;display:none;">
               <svg width="20" height="20" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-left:4px;margin-bottom:2px;">
-                <circle cx="12" cy="12" r="12" fill="#0066CC"/>
-                <path d="M9.5 15.5l-2-2m0 0l5-5m-5 5l2 2m0 0l5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <circle cx="12" cy="12" r="11" fill="#fff" stroke="#0f172a" stroke-width="1.5" />
+                <path d="M8.5 12.5l2.2 2.2 4.8-5.4" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
               </svg>
             </div>
             <p id="displayRoll" class="muted mutedSmall" style="font-size:13px">Roll: —</p>
@@ -348,6 +348,7 @@
     setTimeout(()=> location.href = 'index.html', 200);
     throw new Error('Not authenticated');
   }
+  let currentProfile = null;
 
   function parseJwt(t) {
     try {
@@ -514,6 +515,11 @@
       const verifiedEl = document.getElementById('verifiedBadge');
       if (verifiedEl) {
         verifiedEl.style.display = (settings?.verified) ? 'block' : 'none';
+      }
+      // Chat color alias (unused for student page visuals but kept for consistency)
+      const chatColor = cos.chatColor || cos.chatBubbleColor || '';
+      if (chatColor) {
+        document.documentElement.style.setProperty('--chat-accent', chatColor);
       }
       // Inject cosmetic animations if not already present
       injectCosmeticAnimations();
@@ -932,7 +938,7 @@
     if (type === 'animatedNameEffects') return cos.animatedNameEffect || null;
     if (type === 'animatedBorders') return cos.animatedBorder || null;
     if (type === 'titleEffects') return cos.titleEffect || null;
-    if (type === 'chatColors') return cos.chatColor || null;
+    if (type === 'chatColors') return cos.chatColor || cos.chatBubbleColor || null;
     if (type === 'backgrounds') return cos.backgroundUrl || null;
     return null;
   }
@@ -944,7 +950,7 @@
     else if (type === 'animatedNameEffects') body.cosmetics.animatedNameEffect = value;
     else if (type === 'animatedBorders') body.cosmetics.animatedBorder = value;
     else if (type === 'titleEffects') body.cosmetics.titleEffect = value;
-    else if (type === 'chatColors') body.cosmetics.chatColor = value;
+    else if (type === 'chatColors') { body.cosmetics.chatColor = value; body.cosmetics.chatBubbleColor = value; }
     else if (type === 'backgrounds') body.cosmetics.backgroundUrl = value;
 
     try {
