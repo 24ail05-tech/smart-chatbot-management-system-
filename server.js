@@ -192,6 +192,22 @@ const coursePlanSchema = new Schema({
 });
 const CoursePlan = mongoose.model("CoursePlan", coursePlanSchema);
 
+const appConfigSchema = new Schema({
+  key: { type: String, unique: true },
+  coursePlanDisabled: { type: Boolean, default: false },
+  promptTopics: { type: String, default: "" },
+});
+const AppConfig = mongoose.model("AppConfig", appConfigSchema);
+
+async function getAppConfig() {
+  let cfg = await AppConfig.findOne({ key: "global" });
+  if (!cfg) {
+    cfg = new AppConfig({ key: "global" });
+    await cfg.save();
+  }
+  return cfg;
+}
+
 const chatHistorySchema = new Schema(
   {
     roll: { type: String, index: true },
@@ -760,8 +776,12 @@ app.patch("/api/me/settings", authenticate, csrfProtect, async (req, res) => {
         avatarBorder: Joi.string().allow("", null).optional(),
         nameStyle: Joi.string().allow("", null).optional(),
         chatBubbleColor: Joi.string().allow("", null).optional(),
+        chatColor: Joi.string().allow("", null).optional(), // alias for UI
         backgroundUrl: Joi.string().uri().allow("", null).optional(),
         badges: Joi.array().items(Joi.string()).optional(),
+        animatedNameEffect: Joi.string().allow("", null).optional(),
+        animatedBorder: Joi.string().allow("", null).optional(),
+        titleEffect: Joi.string().allow("", null).optional(),
       }).optional(),
     });
     const { error, value } = schema.validate(req.body);
@@ -769,6 +789,17 @@ app.patch("/api/me/settings", authenticate, csrfProtect, async (req, res) => {
 
     const student = await Student.findOne({ roll: req.student.roll });
     if (!student) return res.status(404).json({ error: "Student not found" });
+
+    student.settings = student.settings || {};
+    student.settings.cosmetics = student.settings.cosmetics || {};
+    student.settings.unlocked = student.settings.unlocked || {};
+
+    // normalize chat color alias
+    if (value.cosmetics) {
+      if (value.cosmetics.chatColor && !value.cosmetics.chatBubbleColor) {
+        value.cosmetics.chatBubbleColor = value.cosmetics.chatColor;
+      }
+    }
 
     student.settings = { ...student.settings, ...value };
     await student.save();
@@ -784,7 +815,17 @@ app.post("/api/admin/reward/cosmetic", authenticate, requireAdmin, csrfProtect, 
   try {
     const schema = Joi.object({
       roll: Joi.string().required(),
-      type: Joi.string().valid("avatarBorder", "nameStyle", "chatBubbleColor", "backgroundUrl", "badge").required(),
+      type: Joi.string().valid(
+        "avatarBorder",
+        "nameStyle",
+        "chatBubbleColor",
+        "chatColor",
+        "backgroundUrl",
+        "badge",
+        "animatedNameEffect",
+        "animatedBorder",
+        "titleEffect"
+      ).required(),
       value: Joi.string().required(),
       applyNow: Joi.boolean().default(true),
     });
@@ -808,8 +849,12 @@ app.post("/api/admin/reward/cosmetic", authenticate, requireAdmin, csrfProtect, 
         if (value.applyNow) student.settings.cosmetics.nameStyle = value.value;
         break;
       case "chatBubbleColor":
+      case "chatColor":
         if (!student.settings.unlocked.chatColors.includes(value.value)) student.settings.unlocked.chatColors.push(value.value);
-        if (value.applyNow) student.settings.cosmetics.chatBubbleColor = value.value;
+        if (value.applyNow) {
+          student.settings.cosmetics.chatBubbleColor = value.value;
+          student.settings.cosmetics.chatColor = value.value;
+        }
         break;
       case "backgroundUrl":
         if (!student.settings.unlocked.backgrounds.includes(value.value)) student.settings.unlocked.backgrounds.push(value.value);
@@ -821,6 +866,18 @@ app.post("/api/admin/reward/cosmetic", authenticate, requireAdmin, csrfProtect, 
           const badges = new Set([...(student.settings.cosmetics.badges || []), value.value]);
           student.settings.cosmetics.badges = Array.from(badges);
         }
+        break;
+      case "animatedNameEffect":
+        if (!student.settings.unlocked.animatedNameEffects.includes(value.value)) student.settings.unlocked.animatedNameEffects.push(value.value);
+        if (value.applyNow) student.settings.cosmetics.animatedNameEffect = value.value;
+        break;
+      case "animatedBorder":
+        if (!student.settings.unlocked.animatedBorders.includes(value.value)) student.settings.unlocked.animatedBorders.push(value.value);
+        if (value.applyNow) student.settings.cosmetics.animatedBorder = value.value;
+        break;
+      case "titleEffect":
+        if (!student.settings.unlocked.titleEffects.includes(value.value)) student.settings.unlocked.titleEffects.push(value.value);
+        if (value.applyNow) student.settings.cosmetics.titleEffect = value.value;
         break;
     }
 
@@ -877,8 +934,41 @@ try {
   console.warn("Multer not available for course plan uploads");
 }
 
+app.get("/api/admin/course-source-config", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const cfg = await getAppConfig();
+    res.json({ coursePlanDisabled: cfg.coursePlanDisabled, promptTopics: cfg.promptTopics || "" });
+  } catch (err) {
+    console.error("config fetch error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.patch("/api/admin/course-source-config", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const schema = Joi.object({
+      coursePlanDisabled: Joi.boolean().optional(),
+      promptTopics: Joi.string().allow("", null).optional(),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.message });
+
+    const cfg = await getAppConfig();
+    if (typeof value.coursePlanDisabled === "boolean") cfg.coursePlanDisabled = value.coursePlanDisabled;
+    if (typeof value.promptTopics === "string") cfg.promptTopics = value.promptTopics;
+    await cfg.save();
+    res.json({ ok: true, coursePlanDisabled: cfg.coursePlanDisabled, promptTopics: cfg.promptTopics || "" });
+  } catch (err) {
+    console.error("config update error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/course-plan", authenticate, requireAdmin, planUpload ? planUpload.single("file") : (req, res, next) => next(), csrfProtect, async (req, res) => {
   try {
+    const cfg = await getAppConfig();
+    if (cfg.coursePlanDisabled) return res.status(403).json({ error: "Course plan upload disabled" });
+
     let name = req.body?.name || '';
     let content = '';
     
@@ -995,9 +1085,42 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
     await chat.save();
     io.emit("chat:new", chat);
 
-    // Strict course answer: reply only from course plan text or deny
+    // Strict course answer: reply only from course plan text or from prompt topics if PDF is disabled
     if (value.strictCourse) {
       try {
+        const cfg = await getAppConfig();
+
+        // When PDFs are disabled, use admin-provided prompt topics instead
+        if (cfg.coursePlanDisabled) {
+          const text = (cfg.promptTopics || '').trim();
+          if (!text) return res.status(403).json({ error: "Course topics not configured" });
+
+          const q = (value.message || '').trim();
+          const tokens = q.toLowerCase().split(/\W+/).filter(Boolean);
+          let bestIdx = -1;
+          for (const t of tokens) {
+            if (t.length < 3) continue;
+            const idx = text.toLowerCase().indexOf(t);
+            if (idx >= 0) { bestIdx = idx; break; }
+          }
+          if (bestIdx < 0) return res.status(403).json({ error: "course related clarification only allowed" });
+
+          const start = Math.max(0, bestIdx - 300);
+          const end = Math.min(text.length, bestIdx + 500);
+          const snippet = text.slice(start, end).replace(/\s{2,}/g, ' ').trim();
+          const reply = `From topics: ${snippet}`;
+          const assistant = new ChatHistory({
+            roll: value.roll,
+            sender: "assistant",
+            message: reply,
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          });
+          await assistant.save();
+          io.emit("chat:new", assistant);
+          return res.json({ assistantReply: reply, chat, strict: true });
+        }
+
+        // Otherwise use uploaded course plans
         const plans = await CoursePlan.find().sort({ uploadedAt: -1 }).limit(5);
         const plan = plans[0];
         let text = (plan?.content || '').trim();
@@ -1005,13 +1128,12 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
         // Filter out non-readable/encoded content (base64, binary, etc.)
         const isPrintableText = (str) => {
           if (!str || str.length === 0) return false;
-          // Check if text has reasonable amount of printable ASCII/readable chars
           const printableChars = str.split('').filter(c => {
             const code = c.charCodeAt(0);
             return (code >= 32 && code <= 126) || code === 10 || code === 13 || code === 9;
           }).length;
           const ratio = printableChars / str.length;
-          return ratio > 0.7; // At least 70% should be readable
+          return ratio > 0.7;
         };
         
         if (!text || !isPrintableText(text)) {

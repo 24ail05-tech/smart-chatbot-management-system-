@@ -7,6 +7,7 @@ const API = "https://smart-chatbot-backend-w5tq.onrender.com";
 let csrfToken = "";
 let allStudents = [];
 let darkMode = localStorage.getItem('adminDarkMode') === 'true';
+let coursePlanDisabled = false;
 
 // Apply dark mode if stored
 if (darkMode) document.documentElement.classList.add('dark-mode');
@@ -547,9 +548,64 @@ function useTemplate(templateId) {
 //===============================================
 // 7. COURSE PLANS
 //===============================================
+async function loadCourseSourceConfig() {
+  try {
+    const res = await secureFetch(`${API}/api/admin/course-source-config`);
+    if (!res || !res.ok) return;
+    const cfg = await res.json();
+    coursePlanDisabled = !!cfg.coursePlanDisabled;
+    const promptBox = document.getElementById('promptTopics');
+    if (promptBox) promptBox.value = cfg.promptTopics || '';
+    updateCoursePlanUI();
+  } catch (e) { console.error('config load failed', e); }
+}
+
+function updateCoursePlanUI() {
+  const planBtn = document.getElementById('planBtn');
+  const planFile = document.getElementById('planFile');
+  const status = document.getElementById('coursePlanStatus');
+  const toggleBtn = document.getElementById('toggleCoursePlanBtn');
+  if (planBtn) planBtn.disabled = coursePlanDisabled;
+  if (planFile) planFile.disabled = coursePlanDisabled;
+  if (status) status.textContent = coursePlanDisabled ? 'PDF uploads disabled' : 'PDF uploads enabled';
+  if (toggleBtn) toggleBtn.textContent = coursePlanDisabled ? 'Enable PDF Uploads' : 'Disable PDF Uploads';
+}
+
+async function savePromptTopics() {
+  const promptBox = document.getElementById('promptTopics');
+  const topics = promptBox?.value || '';
+  const res = await secureFetch(`${API}/api/admin/course-source-config`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ promptTopics: topics })
+  });
+  if (res && res.ok) {
+    alert('✅ Topics saved');
+    await loadCourseSourceConfig();
+  } else {
+    alert('❌ Failed to save topics');
+  }
+}
+
+async function toggleCoursePlanUpload() {
+  const res = await secureFetch(`${API}/api/admin/course-source-config`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coursePlanDisabled: !coursePlanDisabled })
+  });
+  if (res && res.ok) {
+    alert(!coursePlanDisabled ? '🚫 PDF uploads disabled' : '✅ PDF uploads enabled');
+    await loadCourseSourceConfig();
+  } else {
+    alert('❌ Failed to toggle uploads');
+  }
+}
+
 async function uploadCoursePlan() {
   const fileInput = document.getElementById('planFile');
   const nameInput = document.getElementById('planName');
+
+  if (coursePlanDisabled) return alert('PDF uploads are disabled. Enable them first.');
   
   if (!fileInput || !fileInput.files.length) return alert('❌ Select a PDF file');
   
@@ -871,6 +927,7 @@ async function initAdmin() {
   await loadDashboardStats();
   await loadStudents();
   await loadNotices();
+  await loadCourseSourceConfig();
   await loadCoursePlans();
   await loadTemplates();
   await loadAppeals();

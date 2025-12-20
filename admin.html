@@ -363,9 +363,18 @@
 
         <div class="card">
             <h3>Upload Course Plan (PDF)</h3>
+            <p id="coursePlanStatus" style="opacity:0.8;margin-top:0;">PDF uploads enabled</p>
             <input type="text" id="planName" placeholder="Optional: Plan name (auto-detected from filename)">
             <input type="file" id="planFile" accept="application/pdf" style="padding:20px;background:rgba(255,255,255,0.1);border:2px dashed rgba(255,255,255,0.3);">
             <button id="planBtn" onclick="uploadCoursePlan()">📤 Upload PDF</button>
+            <button id="toggleCoursePlanBtn" onclick="toggleCoursePlanUpload()" style="background:#f97316;">Disable PDF Uploads</button>
+        </div>
+
+        <div class="card">
+            <h3>Prompt Topics (when PDF disabled)</h3>
+            <p style="opacity:0.8">When PDF uploads are disabled, chatbot answers only from these topics.</p>
+            <textarea id="promptTopics" placeholder="Enter topics or summary for chatbot" style="min-height:140px;"></textarea>
+            <button onclick="savePromptTopics()">💾 Save Topics</button>
         </div>
 
         <div class="card">
@@ -510,6 +519,25 @@
                         <button onclick="grantCosmetic('animatedBorder','rainbow-spin')">🎨 Rainbow Spin Avatar</button>
                         <button onclick="grantCosmetic('titleEffect','crown')">👑 Crown Title Effect</button>
                         <button onclick="grantCosmetic('titleEffect','halo')">⭐ Halo Title Effect</button>
+                    </div>
+
+                    <h3 style="margin-top:16px;">💎 Legendary & Eternal</h3>
+                    <p style="opacity:0.85">High-tier cosmetics with rare effects</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+                        <button onclick="grantCosmetic('animatedNameEffect','phoenix-blaze')">🔥 Phoenix Blaze (Legendary Name)</button>
+                        <button onclick="grantCosmetic('animatedNameEffect','void-pulse')">🌀 Void Pulse (Eternal Name)</button>
+                        <button onclick="grantCosmetic('animatedBorder','lightning-strike')">⚡ Lightning Strike (Legendary Border)</button>
+                        <button onclick="grantCosmetic('animatedBorder','quantum-field')">⚛️ Quantum Field (Eternal Border)</button>
+                        <button onclick="grantCosmetic('titleEffect','emperor-crown')">👑✨ Emperor Crown (Legendary Title)</button>
+                        <button onclick="grantCosmetic('titleEffect','god-mode')">☀️ God Mode (Eternal Title)</button>
+                        <button onclick="grantCosmetic('avatarBorder','dragon-fire')">🐉 Dragon Fire (Legendary Border)</button>
+                        <button onclick="grantCosmetic('avatarBorder','celestial-aura')">🌌 Celestial Aura (Eternal Border)</button>
+                        <button onclick="grantCosmetic('nameStyle','diamond-shine')">💎 Diamond Shine (Legendary Name)</button>
+                        <button onclick="grantCosmetic('nameStyle','cosmic-energy')">🌠 Cosmic Energy (Eternal Name)</button>
+                        <button onclick="grantCosmetic('chatColor','#fbbf24')">🎨 Legendary Gold Chat</button>
+                        <button onclick="grantCosmetic('chatColor','#a78bfa')">🎨 Eternal Purple Chat</button>
+                        <button onclick="grantCosmetic('backgroundUrl','https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1200')">🌌 Starfield (Legendary BG)</button>
+                        <button onclick="grantCosmetic('backgroundUrl','https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200')">🪐 Cosmic Realm (Eternal BG)</button>
                     </div>
 
                     <h3 style="margin-top:20px;">🔥 LEGENDARY Tier</h3>
