@@ -877,17 +877,18 @@
   // ---------- API CALLS ----------
   async function fetchProfile() {
     try {
-      let res;
-      if (userRoll) {
-        res = await fetch(`${API}/api/student/${encodeURIComponent(userRoll)}`, { headers: authHeaders() });
-      } else {
-        res = await fetch(`${API}/api/me`, { headers: authHeaders() });
+      // Ensure CSRF is ready before hitting protected endpoints
+      if (!isCSRFLoaded) {
+        await loadCSRF();
       }
+
+      const res = await fetch(`${API}/api/me`, { headers: authHeaders(), credentials:'include' });
 
       if (res.status === 401 || res.status === 403) { handleLogoutRedirect(); return null; }
       if (!res.ok) { safeSet(displayName, 'Unnamed'); safeSet(displayEmail, '—'); safeSet(displayRoll, 'Roll: —'); safeSet(displayDept, 'Dept: —'); showLocalAvatar(); return null; }
 
       const data = await res.json();
+      currentProfile = data;
       safeSet(displayName, data.name || data.roll || 'Unnamed');
       safeSet(displayEmail, data.email || '—');
       safeSet(displayRoll, 'Roll: ' + (data.roll || (userRoll || '—')));
@@ -988,17 +989,18 @@
   // ---------- Mailbox ----------
   async function fetchMailbox(){
     try{
-      const res = await fetch(`${API}/api/student/messages`, { headers: authHeaders() });
-      if(!res.ok){ mailList.textContent = 'No messages.'; return; }
-      const data = await res.json();
-      renderMailbox(Array.isArray(data)?data:[]);
-    }catch(e){ mailList.textContent = 'No messages.'; }
-  }
+      // Ensure CSRF is ready before hitting protected endpoints
+      if (!isCSRFLoaded) {
+        await loadCSRF();
+      }
+
+      const res = await fetch(`${API}/api/me`, { headers: authHeaders(), credentials:'include' });
 
   function renderMailbox(items){
     mailList.innerHTML = '';
     if(items.length===0){ mailList.textContent = 'No messages.'; return; }
     items.slice(0,10).forEach(m=>{
+      currentProfile = data;
       const wrap = document.createElement('div');
       wrap.className = 'mail-item';
       const title = m.title || (m.type === 'reward' ? 'Reward' : 'Message');
@@ -1119,18 +1121,16 @@
         if(d.roll===userRoll) {
           console.log('HC updated:', d);
           if(currentProfile) currentProfile.hc = d.hc;
-          if(document.getElementById('shopModal')?.classList.contains('active')) {
-            renderShop(); // Update shop if it's open
-          }
+          renderCosmetics();
+          renderShop();
           alert(`💎 You received ${d.amount} HC! New balance: ${d.hc}`);
         }
       });
       socket.on('hc:broadcast', (d)=> {
         console.log('HC broadcast received:', d);
         if(currentProfile) currentProfile.hc = (currentProfile.hc || 0) + d.amount;
-        if(document.getElementById('shopModal')?.classList.contains('active')) {
-          renderShop(); // Update shop if it's open
-        }
+        renderCosmetics();
+        renderShop();
         alert(`🎁 Admin sent everyone ${d.amount} HC! Your new balance: ${currentProfile.hc}`);
       });
       socket.on('cosmetic:removed-violation', (d)=> {
@@ -1190,8 +1190,12 @@
   // ---------- Initial load & polling ----------
   initDarkMode();
   async function loadAll() { await fetchProfile(); await fetchChatHistoryAndUsage(); await fetchNotices(); await fetchWarnings(); await fetchMailbox(); renderStudentQR(); }
-  loadAll();
-  const poll = setInterval(loadAll, 12000);
+  let poll;
+  (async () => {
+    await loadCSRF();
+    await loadAll();
+    poll = setInterval(loadAll, 12000);
+  })();
 
   // Render student's QR (no external lib; use Image API served by admin if exists, else lightweight SVG)
   function renderStudentQR(){
@@ -1261,7 +1265,9 @@
       { value:'crystal-fortress', label:'Crystal Fortress (MYTHIC)', tier:'mythic', preview:'💎 Crystal Shield' },
       { value:'prismatic-shield', label:'Prismatic Shield (TRANSCENDENT)', tier:'transcendent', preview:'🌈 Ultimate Prism Shield' },
       { value:'eternal-flames', label:'Eternal Flames (TRANSCENDENT)', tier:'transcendent', preview:'🔥💫 Infinite Fire' },
-      { value:'void-emperor', label:'Void Emperor (TRANSCENDENT)', tier:'transcendent', preview:'👑🌌 Void Royalty' }
+      { value:'void-emperor', label:'Void Emperor (TRANSCENDENT)', tier:'transcendent', preview:'👑🌌 Void Royalty' },
+      { value:'singularity-crown', label:'Singularity Crown (SUPREME)', tier:'supreme', preview:'🌀👑 Gravity Ring' },
+      { value:'hypernova-crest', label:'Hypernova Crest (SUPREME)', tier:'supreme', preview:'🌠 Radiant Nova' }
     ],
     nameStyles: [
       { value:'gradient-gold', label:'Gradient Gold', tier:'rare', preview:'Golden Text' },
@@ -1273,7 +1279,9 @@
       { value:'crystal-radiance', label:'Crystal Radiance (MYTHIC)', tier:'mythic', preview:'💎 Crystal Light' },
       { value:'aurora-burst', label:'Aurora Burst (TRANSCENDENT)', tier:'transcendent', preview:'🌌 Ultimate Aurora' },
       { value:'divine-script', label:'Divine Script (TRANSCENDENT)', tier:'transcendent', preview:'✨☀️ Divine Writing' },
-      { value:'reality-bender', label:'Reality Bender (TRANSCENDENT)', tier:'transcendent', preview:'🌀💫 Reality Shift' }
+      { value:'reality-bender', label:'Reality Bender (TRANSCENDENT)', tier:'transcendent', preview:'🌀💫 Reality Shift' },
+      { value:'solar-corona', label:'Solar Corona (SUPREME)', tier:'supreme', preview:'☀️🔥 Stellar Ink' },
+      { value:'luminous-aether', label:'Luminous Aether (SUPREME)', tier:'supreme', preview:'✨🪐 Aether Text' }
     ],
     animatedNameEffects: [
       { value:'rainbow-wave', label:'Rainbow Wave', tier:'rare', preview:'🌈 Wave' },
@@ -1285,7 +1293,9 @@
       { value:'crystal-cascade', label:'Crystal Cascade (MYTHIC)', tier:'mythic', preview:'💎 Crystal Rain' },
       { value:'time-warp', label:'Time Warp (TRANSCENDENT)', tier:'transcendent', preview:'⏳ Ultimate Time Distortion' },
       { value:'dimension-rift', label:'Dimension Rift (TRANSCENDENT)', tier:'transcendent', preview:'🌀✨ Reality Tear' },
-      { value:'infinity-spiral', label:'Infinity Spiral (TRANSCENDENT)', tier:'transcendent', preview:'♾️ Infinite Loop' }
+      { value:'infinity-spiral', label:'Infinity Spiral (TRANSCENDENT)', tier:'transcendent', preview:'♾️ Infinite Loop' },
+      { value:'quantum-flare', label:'Quantum Flare (SUPREME)', tier:'supreme', preview:'⚛️🔥 Quantum Burst' },
+      { value:'stellar-rune', label:'Stellar Rune (SUPREME)', tier:'supreme', preview:'🌟🔮 Arcane Light' }
     ],
     animatedBorders: [
       { value:'pulse-glow', label:'Pulsing Glow', tier:'rare', preview:'🌟 Pulse' },
@@ -1297,7 +1307,9 @@
       { value:'crystal-orbit', label:'Crystal Orbit (MYTHIC)', tier:'mythic', preview:'💎 Crystal Rotation' },
       { value:'singularity', label:'Singularity (TRANSCENDENT)', tier:'transcendent', preview:'🕳️ Black Hole Collapse' },
       { value:'supernova', label:'Supernova (TRANSCENDENT)', tier:'transcendent', preview:'💥🌟 Star Explosion' },
-      { value:'universe-edge', label:'Universe Edge (TRANSCENDENT)', tier:'transcendent', preview:'🌌✨ Cosmic Boundary' }
+      { value:'universe-edge', label:'Universe Edge (TRANSCENDENT)', tier:'transcendent', preview:'🌌✨ Cosmic Boundary' },
+      { value:'event-horizon', label:'Event Horizon (SUPREME)', tier:'supreme', preview:'🌀🛡️ Light-Bending Shield' },
+      { value:'aurora-blade', label:'Aurora Blade (SUPREME)', tier:'supreme', preview:'🌈⚔️ Radiant Edge' }
     ],
     titleEffects: [
       { value:'crown', label:'Crown', tier:'rare', preview:'👑 Royal' },
@@ -1309,7 +1321,9 @@
       { value:'oracle-vision', label:'Oracle Vision (MYTHIC)', tier:'mythic', preview:'👁️ All-Seeing' },
       { value:'celestial-ring', label:'Celestial Ring (TRANSCENDENT)', tier:'transcendent', preview:'🪐 Planetary Crown' },
       { value:'omniscient', label:'Omniscient (TRANSCENDENT)', tier:'transcendent', preview:'✨👁️✨ All-Knowing' },
-      { value:'reality-weaver', label:'Reality Weaver (TRANSCENDENT)', tier:'transcendent', preview:'🌀💫 Reality Creator' }
+      { value:'reality-weaver', label:'Reality Weaver (TRANSCENDENT)', tier:'transcendent', preview:'🌀💫 Reality Creator' },
+      { value:'omni-throne', label:'Omni Throne (SUPREME)', tier:'supreme', preview:'👑🌌 Throne of Realms' },
+      { value:'crown-of-light', label:'Crown of Light (SUPREME)', tier:'supreme', preview:'💡👑 Radiant Sovereign' }
     ],
     chatColors: [
       { value:'#60a5fa', label:'Sky Blue', tier:'rare', preview:'#60a5fa' },
@@ -1323,7 +1337,9 @@
       { value:'#0891b2', label:'Mythic Deep Cyan (MYTHIC)', tier:'mythic', preview:'#0891b2' },
       { value:'#7c3aed', label:'Transcendent Violet (TRANSCENDENT)', tier:'transcendent', preview:'#7c3aed' },
       { value:'#5b21b6', label:'Transcendent Deep Purple (TRANSCENDENT)', tier:'transcendent', preview:'#5b21b6' },
-      { value:'#4c1d95', label:'Transcendent Ultra Violet (TRANSCENDENT)', tier:'transcendent', preview:'#4c1d95' }
+      { value:'#4c1d95', label:'Transcendent Ultra Violet (TRANSCENDENT)', tier:'transcendent', preview:'#4c1d95' },
+      { value:'#ff6b9d', label:'Supreme Roseflare (SUPREME)', tier:'supreme', preview:'#ff6b9d' },
+      { value:'#12fff7', label:'Supreme Neon Frost (SUPREME)', tier:'supreme', preview:'#12fff7' }
     ],
     backgrounds: [
       { value:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200', label:'Aurora', tier:'rare' },
@@ -1335,7 +1351,9 @@
       { value:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200', label:'Mythic Peaks (MYTHIC)', tier:'mythic' },
       { value:'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=1200', label:'Transcendent Cosmos (TRANSCENDENT)', tier:'transcendent' },
       { value:'https://images.unsplash.com/photo-1484589065579-248aad0d8b13?q=80&w=1200', label:'Transcendent Void (TRANSCENDENT)', tier:'transcendent' },
-      { value:'https://images.unsplash.com/photo-1545243424-0ce743321e11?q=80&w=1200', label:'Transcendent Dimension (TRANSCENDENT)', tier:'transcendent' }
+      { value:'https://images.unsplash.com/photo-1545243424-0ce743321e11?q=80&w=1200', label:'Transcendent Dimension (TRANSCENDENT)', tier:'transcendent' },
+      { value:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200', label:'Supreme Aurora Crown (SUPREME)', tier:'supreme' },
+      { value:'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200', label:'Supreme Stellar Gate (SUPREME)', tier:'supreme' }
     ],
     virtualPets: [
       { value:'dragon-pet', label:'Dragon Companion (SUPREME)', tier:'supreme', preview:'🐉 Majestic Dragon', price: 9999 },
@@ -1439,7 +1457,7 @@
     else if (type === 'virtualPets') body.cosmetics.virtualPet = value;
 
     try {
-      const res = await fetch(`${API}/api/me/settings`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
+      const res = await fetch(`${API}/api/me/settings`, { method:'PATCH', headers: authHeaders(), credentials:'include', body: JSON.stringify(body) });
       if (!res.ok) throw new Error('Failed to equip');
       const data = await res.json();
       currentProfile = data;
@@ -1503,6 +1521,7 @@
       const res = await fetch(`${API}/api/shop/buy`, { 
         method:'POST', 
         headers: authHeaders(), 
+        credentials:'include',
         body: JSON.stringify({ type, value, price })
       });
       if (!res.ok) {
@@ -1528,6 +1547,7 @@
       const res = await fetch(`${API}/api/me/cosmetic/remove`, { 
         method:'POST', 
         headers: authHeaders(), 
+        credentials:'include',
         body: JSON.stringify({ type })
       });
       if (!res.ok) throw new Error('Failed to remove');
