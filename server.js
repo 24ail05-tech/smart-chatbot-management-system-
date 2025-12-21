@@ -1224,6 +1224,27 @@ app.delete("/api/course-plan/:id", authenticate, requireAdmin, csrfProtect, asyn
   }
 });
 
+// ---------------------- Admin Debug: Student Settings ----------------------
+app.get("/api/admin/debug/student/:roll", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const student = await Student.findOne({ roll: req.params.roll });
+    if (!student) return res.status(404).json({ error: "Student not found" });
+    res.json({
+      roll: student.roll,
+      hasSettings: !!student.settings,
+      settingsKeys: student.settings ? Object.keys(student.settings) : [],
+      unlocked: student.settings?.unlocked || {},
+      cosmetics: student.settings?.cosmetics || {},
+      lockedUntil: student.lockedUntil || null,
+      chatbotLockedUntil: student.chatbotLockedUntil || null,
+      updatedAt: student.updatedAt,
+    });
+  } catch (err) {
+    console.error("admin debug student error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // ---------------------- Chat (Redis-backed limiter) ----------------------
 const chatLimiter = rateLimitRedis({
   keyFn: (req) => {
@@ -1313,21 +1334,29 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
             }
           }
 
-          // Fallback: keyword match and return relevant snippet
-          const q = (value.message || '').trim();
-          const tokens = q.toLowerCase().split(/\W+/).filter(Boolean);
-          let bestIdx = -1;
-          for (const t of tokens) {
-            if (t.length < 3) continue;
-            const idx = text.toLowerCase().indexOf(t);
-            if (idx >= 0) { bestIdx = idx; break; }
-          }
-          if (bestIdx < 0) return res.status(403).json({ error: "question not related to configured topics" });
+          // Improved fallback: generate helpful answers for common topics
+          const q = (value.message || '').trim().toLowerCase();
+          const topicsLower = text.toLowerCase();
+          const knownDefs = {
+            'data visualization': 'Data visualization is the practice of representing data in graphical forms (charts, plots, maps) to help people see patterns, trends, and outliers quickly. Effective visualization combines clear encoding (position, size, color), appropriate chart selection (bar, line, scatter, heatmap), and concise storytelling so insights are easy to understand and act on.',
+            'inclusion-exclusion principle': 'The inclusion–exclusion principle is a counting technique in combinatorics for finding the size of the union of overlapping sets. It alternates adding and subtracting intersections to avoid double-counting: |A ∪ B| = |A| + |B| − |A ∩ B|, and generalizes to more sets.',
+            'universe': 'In set theory, the “universe” often refers to the universal set under consideration that contains all objects of interest. In cosmology, the universe is the totality of space, time, matter, and energy.',
+            'mathematics': 'Mathematics is the study of quantity, structure, space, and change. It provides precise language and tools for modeling, analyzing, and solving problems across science, engineering, and everyday life.',
+            'physics': 'Physics is the natural science that studies matter, energy, motion, and the fundamental forces of nature. Core areas include mechanics, thermodynamics, electromagnetism, optics, and quantum physics.'
+          };
 
-          const start = Math.max(0, bestIdx - 200);
-          const end = Math.min(text.length, bestIdx + 400);
-          const snippet = text.slice(start, end).replace(/\s{2,}/g, ' ').trim();
-          const reply = `Based on configured topics: ${snippet}`;
+          let reply;
+          for (const key of Object.keys(knownDefs)) {
+            if (q.includes(key) && topicsLower.includes(key)) {
+              reply = knownDefs[key];
+              break;
+            }
+          }
+
+          if (!reply) {
+            reply = `Based on your configured topics, please ask more specifically about: ${text.replace(/\n+/g, ' ').trim()}.`;
+          }
+
           const assistant = new ChatHistory({
             roll: value.roll,
             sender: "assistant",
