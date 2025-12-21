@@ -251,6 +251,7 @@
           <button class="btn primary" id="editProfileBtn">Edit Profile</button>
           <button class="btn ghost small" id="openChatBtn">Open Chat</button>
           <button class="btn ghost small" onclick="openCosmeticsModal()" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6);color:#fff;">✨ Cosmetics</button>
+          <button class="btn ghost small" onclick="openShopModal()" style="background:linear-gradient(135deg,#22d3ee,#06b6d4);color:#000;font-weight:600;">🛍️ HC Shop</button>
         </div>
 
         <!-- Virtual Pet Display -->
@@ -383,6 +384,7 @@
   const userRoll = jwtPayload?.sub || jwtPayload?.roll || jwtPayload?.username || null;
   
   let csrfToken = "";
+  let isCSRFLoaded = false;
   
   // Load CSRF token
   async function loadCSRF() {
@@ -390,13 +392,12 @@
       const res = await fetch(`${API}/api/csrf-token`, { method: "GET", credentials: "include" });
       const data = await res.json();
       csrfToken = data.csrfToken || "";
+      isCSRFLoaded = true;
+      console.log('CSRF token loaded:', csrfToken ? 'OK' : 'EMPTY');
     } catch (e) {
       console.error("CSRF token fetch failed:", e);
     }
   }
-  
-  // Call this on page load
-  loadCSRF();
 
   function authHeaders() {
     const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
@@ -1118,13 +1119,19 @@
         if(d.roll===userRoll) {
           console.log('HC updated:', d);
           if(currentProfile) currentProfile.hc = d.hc;
-          renderCosmetics();
+          if(document.getElementById('shopModal')?.classList.contains('active')) {
+            renderShop(); // Update shop if it's open
+          }
+          alert(`💎 You received ${d.amount} HC! New balance: ${d.hc}`);
         }
       });
       socket.on('hc:broadcast', (d)=> {
         console.log('HC broadcast received:', d);
         if(currentProfile) currentProfile.hc = (currentProfile.hc || 0) + d.amount;
-        renderCosmetics();
+        if(document.getElementById('shopModal')?.classList.contains('active')) {
+          renderShop(); // Update shop if it's open
+        }
+        alert(`🎁 Admin sent everyone ${d.amount} HC! Your new balance: ${currentProfile.hc}`);
       });
       socket.on('cosmetic:removed-violation', (d)=> {
         if(d.roll===userRoll) {
@@ -1219,6 +1226,27 @@
     </div>
   `;
   document.body.appendChild(cosmeticsModal);
+
+  // HC Shop Modal
+  const shopModal = document.createElement('div');
+  shopModal.className = 'modal-overlay';
+  shopModal.id = 'shopModal';
+  shopModal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🛍️ HC Shop</h2>
+        <span class="modal-close" onclick="closeShopModal()">×</span>
+      </div>
+      <div style="background:linear-gradient(135deg, rgba(34,211,238,0.2), rgba(6,182,212,0.15)); border:2px solid #22d3ee; border-radius:12px; padding:16px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; color:#22d3ee;">💰 Your Balance</h3>
+          <div id="shopBalance" style="background:rgba(34,211,238,0.3); padding:12px 16px; border-radius:8px; font-weight:700; color:#22d3ee; font-size:18px;">0 HC</div>
+        </div>
+      </div>
+      <div id="shopContainer"></div>
+    </div>
+  `;
+  document.body.appendChild(shopModal);
 
   // Cosmetics catalog with progressive tier system (higher tiers include all lower items + exclusives)
   const COSMETICS_CATALOG = {
@@ -1327,6 +1355,58 @@
     document.getElementById('cosmeticsModal').classList.remove('active');
   }
 
+  function openShopModal() {
+    document.getElementById('shopModal').classList.add('active');
+    renderShop();
+  }
+
+  function closeShopModal() {
+    document.getElementById('shopModal').classList.remove('active');
+  }
+
+  function renderShop() {
+    const container = document.getElementById('shopContainer');
+    const balanceEl = document.getElementById('shopBalance');
+    if (!container || !balanceEl) return;
+    
+    const hc = currentProfile?.hc || 0;
+    balanceEl.textContent = `${hc.toLocaleString()} HC`;
+    
+    let html = '';
+    
+    // Only display virtualPets in shop
+    if (COSMETICS_CATALOG.virtualPets) {
+      html += `<h3 style="margin:20px 0 10px; color:#93c5fd;">🐾 Virtual Pets</h3><div class="cosmetic-grid">`;
+      
+      COSMETICS_CATALOG.virtualPets.forEach(item => {
+        const unlocked = isUnlockedCosmetic('virtualPets', item.value);
+        const tierClass = item.tier || 'supreme';
+        const tierBadge = `<span class="tier-badge ${tierClass}">${item.tier}</span>`;
+        
+        html += `
+          <div class="cosmetic-card ${tierClass}">
+            ${unlocked ? '<div class="lock-overlay" style="background:rgba(34,211,238,0.9); color:#000;">✅ Owned</div>' : ''}
+            <h4>${item.label} ${tierBadge}</h4>
+            <div class="cosmetic-preview" style="font-size:64px;">${item.preview || item.label}</div>
+            <div style="margin:10px 0; color:#22d3ee; font-weight:600; font-size:16px;">💎 ${item.price.toLocaleString()} HC</div>
+            ${unlocked 
+              ? '<button class="equip-btn" style="background:#34d399; color:#000;" disabled>✅ Already Owned</button>'
+              : `<button class="equip-btn" style="background:#22d3ee; color:#000;" onclick="buyCosmeticShop('virtualPets', '${item.value}', ${item.price})">🛒 Purchase</button>`
+            }
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+    }
+    
+    if (!html) {
+      html = '<p style="text-align:center; color:rgba(255,255,255,0.6); padding:40px;">No items available in shop</p>';
+    }
+    
+    container.innerHTML = html;
+  }
+
   function isUnlockedCosmetic(type, value) {
     if (!currentProfile || !currentProfile.settings) return false;
     const unlocked = currentProfile.settings.unlocked || {};
@@ -1378,20 +1458,11 @@
   function renderCosmetics() {
     const container = document.getElementById('cosmeticsContainer');
     let html = '';
-    const hc = currentProfile?.hc || 0;
-
-    // Add shop section at top
-    html += `
-      <div style="background:linear-gradient(135deg, rgba(34,211,238,0.2), rgba(6,182,212,0.15)); border:2px solid #22d3ee; border-radius:12px; padding:16px; margin-bottom:20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="margin:0; color:#22d3ee; display:flex; align-items:center; gap:8px;">🛍️ HC Shop</h3>
-          <div style="background:rgba(34,211,238,0.3); padding:8px 12px; border-radius:8px; font-weight:600; color:#22d3ee;">HC Balance: ${hc}</div>
-        </div>
-        <p style="margin:0; font-size:13px; color:rgba(255,255,255,0.8);">Purchase cosmetics with HC. Items unlock in cosmetics modal after purchase.</p>
-      </div>
-    `;
 
     for (const [type, items] of Object.entries(COSMETICS_CATALOG)) {
+      // Exclude virtualPets from cosmetics modal (they're in shop now)
+      if (type === 'virtualPets') continue;
+      
       const typeLabel = type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
       html += `<h3 style="margin:20px 0 10px; color:#93c5fd;">${typeLabel}</h3><div class="cosmetic-grid">`;
 
@@ -1400,25 +1471,17 @@
         const equipped = currentEquippedCosmetic(type) === item.value;
         const tierClass = item.tier || 'rare';
         const tierBadge = `<span class="tier-badge ${tierClass}">${item.tier}</span>`;
-        
-        // Virtual pets can be purchased with HC
-        const canBuyShop = item.price && !unlocked;
-        const shopButton = canBuyShop 
-          ? `<button class="equip-btn" style="background:#22d3ee; color:#000;" onclick="buyCosmeticShop('${type}', '${item.value}', ${item.price})">🛒 Buy for ${item.price} HC</button>`
-          : '';
 
         html += `
           <div class="cosmetic-card ${tierClass} ${equipped ? 'equipped' : ''}">
-            ${!unlocked && !canBuyShop ? '<div class="lock-overlay">🔒</div>' : ''}
+            ${!unlocked ? '<div class="lock-overlay">🔒</div>' : ''}
             <h4>${item.label} ${tierBadge}</h4>
             <div class="cosmetic-preview">${item.preview || item.label}</div>
-            ${shopButton || `
-              <button class="equip-btn ${equipped ? 'equipped' : ''}" 
-                      onclick="equipCosmeticItem('${type}', '${item.value}')" 
-                      ${!unlocked || equipped ? 'disabled' : ''}>
-                ${equipped ? '✅ Equipped' : (unlocked ? 'Equip' : '🔒 Locked')}
-              </button>
-            `}
+            <button class="equip-btn ${equipped ? 'equipped' : ''}" 
+                    onclick="equipCosmeticItem('${type}', '${item.value}')" 
+                    ${!unlocked || equipped ? 'disabled' : ''}>
+              ${equipped ? '✅ Equipped' : (unlocked ? 'Equip' : '🔒 Locked')}
+            </button>
             ${unlocked && !equipped ? `<button class="equip-btn" style="background:#f87171; margin-top:6px;" onclick="removeCosmeticItem('${type}')">Remove</button>` : ''}
           </div>
         `;
@@ -1432,6 +1495,11 @@
 
   async function buyCosmeticShop(type, value, price) {
     try {
+      // Ensure CSRF token is loaded
+      if (!isCSRFLoaded) {
+        await loadCSRF();
+      }
+      
       const res = await fetch(`${API}/api/shop/buy`, { 
         method:'POST', 
         headers: authHeaders(), 
@@ -1446,7 +1514,8 @@
       // Update current profile with new HC and unlocked items
       currentProfile.hc = data.hc;
       currentProfile.settings.unlocked = data.unlocked;
-      renderCosmetics();
+      renderShop(); // Update shop to show new balance and ownership
+      renderCosmetics(); // Update cosmetics to reflect unlocked items
       alert(`✅ ${data.message}`);
     } catch (e) {
       alert('❌ Failed to purchase cosmetic');
