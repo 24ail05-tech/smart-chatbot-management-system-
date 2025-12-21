@@ -484,6 +484,18 @@
             </button>
             <p id="migrationStatus" style="font-size:12px;margin-top:8px;opacity:0.8;"></p>
         </div>
+
+        <div class="card" style="background:#eef2ff;border-left:4px solid #4f46e5;">
+            <h3>🧪 Debug Student Storage</h3>
+            <p style="margin-bottom:10px;">
+                Enter the student's roll above (Reward Recipient), then run debug to inspect cosmetics and unlocked arrays.
+            </p>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button onclick="debugStudentSettings()" style="background:#4f46e5;">🔍 Run Debug</button>
+              <button onclick="document.getElementById('debugOutput').textContent='';" style="background:#64748b;">🧹 Clear</button>
+            </div>
+            <pre id="debugOutput" style="margin-top:10px;padding:10px;background:#fff;border:1px solid #e5e7eb;overflow:auto;max-height:220px;white-space:pre-wrap;"></pre>
+        </div>
         
         <div class="card">
             <h3>Send Reward/Achievement</h3>

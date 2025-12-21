@@ -449,6 +449,40 @@ async function migrateSettings() {
   }
 }
 
+async function debugStudentSettings() {
+  try {
+    const roll = document.getElementById('rewardRecipient')?.value.trim();
+    if (!roll) return alert('Enter a recipient roll in the Rewards section');
+
+    const res = await secureFetch(`${API}/api/admin/debug/student/${encodeURIComponent(roll)}`);
+    const data = await res.json();
+
+    const out = document.getElementById('debugOutput');
+    if (!res.ok) {
+      out.textContent = `❌ Error: ${data.error || 'Unknown error'}`;
+      return;
+    }
+
+    // Pretty print important fields
+    const display = {
+      roll: data.roll,
+      hasSettings: data.hasSettings,
+      settingsKeys: data.settingsKeys,
+      unlocked: data.unlocked,
+      cosmetics: data.cosmetics,
+      lockedUntil: data.lockedUntil,
+      chatbotLockedUntil: data.chatbotLockedUntil,
+      updatedAt: data.updatedAt,
+    };
+
+    out.textContent = JSON.stringify(display, null, 2);
+  } catch (e) {
+    const out = document.getElementById('debugOutput');
+    out.textContent = `❌ Exception: ${e.message}`;
+    console.error('debugStudentSettings error:', e);
+  }
+}
+
 async function grantVerifiedBadge(roll) {
   if (!roll) {
     roll = document.getElementById('rewardRecipient')?.value.trim();
