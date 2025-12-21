@@ -173,8 +173,10 @@
   .cosmetic-card.rare { border-color:#60a5fa; }
   .cosmetic-card.mythic { border-color:#22d3ee; border-width:3px; background:linear-gradient(135deg, rgba(34,211,238,0.25), rgba(14,165,233,0.2)); box-shadow:0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.2); animation:mythic-card-glow 3s infinite; }
   .cosmetic-card.transcendent { border-color:#7c3aed; border-width:4px; background:linear-gradient(135deg, rgba(124,58,237,0.3), rgba(67,56,202,0.25)); box-shadow:0 0 40px rgba(124,58,237,0.7), 0 0 80px rgba(124,58,237,0.4), 0 0 120px rgba(124,58,237,0.2); animation:transcendent-card-glow 2.5s infinite; }
+  .cosmetic-card.supreme { border-color:#ff6b9d; border-width:5px; background:linear-gradient(135deg, rgba(255,107,157,0.4), rgba(255,20,147,0.3)); box-shadow:0 0 50px rgba(255,107,157,1), 0 0 100px rgba(255,107,157,0.6), 0 0 150px rgba(255,107,157,0.3); animation:supreme-card-glow 2s infinite; }
   @keyframes mythic-card-glow { 0%, 100% { box-shadow:0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.2); } 50% { box-shadow:0 0 45px rgba(34,211,238,0.8), 0 0 90px rgba(34,211,238,0.4); } }
   @keyframes transcendent-card-glow { 0%, 100% { box-shadow:0 0 40px rgba(124,58,237,0.7), 0 0 80px rgba(124,58,237,0.4), 0 0 120px rgba(124,58,237,0.2); } 50% { box-shadow:0 0 60px rgba(124,58,237,1), 0 0 120px rgba(124,58,237,0.6), 0 0 180px rgba(124,58,237,0.3); } }
+  @keyframes supreme-card-glow { 0%, 100% { box-shadow:0 0 50px rgba(255,107,157,1), 0 0 100px rgba(255,107,157,0.6), 0 0 150px rgba(255,107,157,0.3); } 50% { box-shadow:0 0 70px rgba(255,107,157,1), 0 0 140px rgba(255,107,157,0.8), 0 0 210px rgba(255,107,157,0.5); } }
   .cosmetic-card.equipped { border-color:#10b981; box-shadow:0 0 15px rgba(16,185,129,0.4); }
   .cosmetic-card h4 { margin:0 0 8px; font-size:15px; display:flex; align-items:center; gap:6px; }
   .tier-badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; }
@@ -183,9 +185,11 @@
   .tier-badge.rare { background:#60a5fa; color:#000; }
   .tier-badge.mythic { background:linear-gradient(135deg,#22d3ee,#06b6d4); color:#000; animation:mythic-pulse 1.8s infinite; font-weight:900; }
   .tier-badge.transcendent { background:linear-gradient(135deg,#7c3aed,#5b21b6); color:#fff; animation:transcendent-glow 1.5s infinite; font-weight:900; text-shadow:0 0 8px rgba(255,255,255,0.8); }
+  .tier-badge.supreme { background:linear-gradient(135deg,#ff6b9d,#ff1493); color:#fff; animation:supreme-glow 1.2s infinite; font-weight:900; text-shadow:0 0 10px rgba(255,20,147,0.9); }
   @keyframes eternal-glow { 0%, 100% { box-shadow:0 0 10px rgba(167,139,250,0.8); } 50% { box-shadow:0 0 20px rgba(167,139,250,1); } }
   @keyframes mythic-pulse { 0%, 100% { box-shadow:0 0 15px rgba(34,211,238,1), 0 0 30px rgba(34,211,238,0.6); transform:scale(1); } 50% { box-shadow:0 0 25px rgba(34,211,238,1), 0 0 50px rgba(34,211,238,0.8); transform:scale(1.05); } }
   @keyframes transcendent-glow { 0%, 100% { box-shadow:0 0 20px rgba(124,58,237,1), 0 0 40px rgba(124,58,237,0.8); transform:scale(1) rotate(0deg); } 50% { box-shadow:0 0 35px rgba(124,58,237,1), 0 0 70px rgba(124,58,237,1), 0 0 100px rgba(124,58,237,0.6); transform:scale(1.08) rotate(2deg); } }
+  @keyframes supreme-glow { 0%, 100% { box-shadow:0 0 20px rgba(255,107,157,1), 0 0 40px rgba(255,107,157,0.8); transform:scale(1) rotate(0deg); } 50% { box-shadow:0 0 40px rgba(255,107,157,1), 0 0 80px rgba(255,107,157,1), 0 0 120px rgba(255,107,157,0.8); transform:scale(1.1) rotate(-3deg); } }
   .cosmetic-preview { margin:10px 0; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2); text-align:center; font-size:13px; }
   .equip-btn { width:100%; padding:10px; border:none; border-radius:8px; font-weight:600; cursor:pointer; background:#3b82f6; color:#fff; margin-top:8px; transition:0.3s; }
   .equip-btn:hover { background:#60a5fa; transform:translateY(-2px); }
@@ -1108,6 +1112,28 @@
       socket.on('coursePlan:updated', ()=> fetchNotices());
       socket.on('notice:new', ()=> fetchNotices());
       socket.on('chat:new', (chat)=> { if(chat.roll===userRoll) fetchChatHistoryAndUsage(); });
+      
+      // HC Currency updates
+      socket.on('hc:updated', (d)=> { 
+        if(d.roll===userRoll) {
+          console.log('HC updated:', d);
+          if(currentProfile) currentProfile.hc = d.hc;
+          renderCosmetics();
+        }
+      });
+      socket.on('hc:broadcast', (d)=> {
+        console.log('HC broadcast received:', d);
+        if(currentProfile) currentProfile.hc = (currentProfile.hc || 0) + d.amount;
+        renderCosmetics();
+      });
+      socket.on('cosmetic:removed-violation', (d)=> {
+        if(d.roll===userRoll) {
+          console.log('Cosmetics removed due to violation:', d.removed);
+          alert('⚠️ Premium cosmetics removed due to: ' + d.reason);
+          fetchProfile();
+        }
+      });
+      socket.on('notice:deleted', ()=> fetchNotices());
     }
   } catch(err){ console.warn('socket.io not available', err); }
 
@@ -1417,7 +1443,9 @@
         return;
       }
       const data = await res.json();
-      currentProfile = data; // Update with new HC balance and unlocked items
+      // Update current profile with new HC and unlocked items
+      currentProfile.hc = data.hc;
+      currentProfile.settings.unlocked = data.unlocked;
       renderCosmetics();
       alert(`✅ ${data.message}`);
     } catch (e) {

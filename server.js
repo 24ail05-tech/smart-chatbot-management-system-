@@ -830,7 +830,9 @@ app.get("/api/me", authenticate, csrfProtect, async (req, res) => {
   try {
     const student = await Student.findOne({ roll: req.student.roll }).select("-passwordHash -refreshTokens");
     if (!student) return res.status(404).json({ error: "Student not found" });
-    res.json(student);
+    const data = student.toObject();
+    data.hc = student.hc || 0;
+    res.json(data);
   } catch (err) {
     console.error("get me error:", err);
     res.status(500).json({ error: "Server error" });
