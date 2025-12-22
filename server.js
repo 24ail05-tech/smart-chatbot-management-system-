@@ -1147,6 +1147,18 @@ app.post("/api/shop/buy", authenticate, csrfProtect, async (req, res) => {
     // Deduct HC and add to unlocked
     student.hc -= value.price;
     student.settings.unlocked[value.type].push(value.value);
+
+    // ASCENDED achievement unlock: if buying an ASCENDED virtual pet, grant exclusive title effect
+    const ASCENDED_PETS = new Set([
+      'godling-pet', 'leviathan-pet', 'sentinel-pet', 'chimera-pet', 'reaper-pet'
+    ]);
+    if (value.type === 'virtualPets' && ASCENDED_PETS.has(value.value)) {
+      student.settings.unlocked.titleEffects = student.settings.unlocked.titleEffects || [];
+      if (!student.settings.unlocked.titleEffects.includes('absolute-sovereign')) {
+        student.settings.unlocked.titleEffects.push('absolute-sovereign');
+      }
+    }
+
     student.markModified('settings');
     student.markModified('settings.unlocked');
 
