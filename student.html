@@ -174,9 +174,11 @@
   .cosmetic-card.mythic { border-color:#22d3ee; border-width:3px; background:linear-gradient(135deg, rgba(34,211,238,0.25), rgba(14,165,233,0.2)); box-shadow:0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.2); animation:mythic-card-glow 3s infinite; }
   .cosmetic-card.transcendent { border-color:#7c3aed; border-width:4px; background:linear-gradient(135deg, rgba(124,58,237,0.3), rgba(67,56,202,0.25)); box-shadow:0 0 40px rgba(124,58,237,0.7), 0 0 80px rgba(124,58,237,0.4), 0 0 120px rgba(124,58,237,0.2); animation:transcendent-card-glow 2.5s infinite; }
   .cosmetic-card.supreme { border-color:#ff6b9d; border-width:5px; background:linear-gradient(135deg, rgba(255,107,157,0.4), rgba(255,20,147,0.3)); box-shadow:0 0 50px rgba(255,107,157,1), 0 0 100px rgba(255,107,157,0.6), 0 0 150px rgba(255,107,157,0.3); animation:supreme-card-glow 2s infinite; }
+  .cosmetic-card.ascended { border-color:#00d4ff; border-width:6px; background:linear-gradient(135deg, rgba(0,212,255,0.5), rgba(0,255,255,0.4)); box-shadow:0 0 70px rgba(0,212,255,1), 0 0 140px rgba(0,255,255,0.8), 0 0 210px rgba(0,212,255,0.5), inset 0 0 30px rgba(0,212,255,0.3); animation:ascended-card-glow 1.5s infinite; }
   @keyframes mythic-card-glow { 0%, 100% { box-shadow:0 0 30px rgba(34,211,238,0.5), 0 0 60px rgba(34,211,238,0.2); } 50% { box-shadow:0 0 45px rgba(34,211,238,0.8), 0 0 90px rgba(34,211,238,0.4); } }
   @keyframes transcendent-card-glow { 0%, 100% { box-shadow:0 0 40px rgba(124,58,237,0.7), 0 0 80px rgba(124,58,237,0.4), 0 0 120px rgba(124,58,237,0.2); } 50% { box-shadow:0 0 60px rgba(124,58,237,1), 0 0 120px rgba(124,58,237,0.6), 0 0 180px rgba(124,58,237,0.3); } }
   @keyframes supreme-card-glow { 0%, 100% { box-shadow:0 0 50px rgba(255,107,157,1), 0 0 100px rgba(255,107,157,0.6), 0 0 150px rgba(255,107,157,0.3); } 50% { box-shadow:0 0 70px rgba(255,107,157,1), 0 0 140px rgba(255,107,157,0.8), 0 0 210px rgba(255,107,157,0.5); } }
+  @keyframes ascended-card-glow { 0%, 100% { box-shadow:0 0 70px rgba(0,212,255,1), 0 0 140px rgba(0,255,255,0.8), 0 0 210px rgba(0,212,255,0.5), inset 0 0 30px rgba(0,212,255,0.3); } 50% { box-shadow:0 0 100px rgba(0,212,255,1), 0 0 200px rgba(0,255,255,1), 0 0 300px rgba(0,212,255,0.7), inset 0 0 50px rgba(0,212,255,0.5); } }
   .cosmetic-card.equipped { border-color:#10b981; box-shadow:0 0 15px rgba(16,185,129,0.4); }
   .cosmetic-card h4 { margin:0 0 8px; font-size:15px; display:flex; align-items:center; gap:6px; }
   .tier-badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; }
@@ -186,10 +188,12 @@
   .tier-badge.mythic { background:linear-gradient(135deg,#22d3ee,#06b6d4); color:#000; animation:mythic-pulse 1.8s infinite; font-weight:900; }
   .tier-badge.transcendent { background:linear-gradient(135deg,#7c3aed,#5b21b6); color:#fff; animation:transcendent-glow 1.5s infinite; font-weight:900; text-shadow:0 0 8px rgba(255,255,255,0.8); }
   .tier-badge.supreme { background:linear-gradient(135deg,#ff6b9d,#ff1493); color:#fff; animation:supreme-glow 1.2s infinite; font-weight:900; text-shadow:0 0 10px rgba(255,20,147,0.9); }
+  .tier-badge.ascended { background:linear-gradient(135deg,#00d4ff,#00ffff); color:#000; animation:ascended-glow 1s infinite; font-weight:900; text-shadow:0 0 10px rgba(0,212,255,1); }
   @keyframes eternal-glow { 0%, 100% { box-shadow:0 0 10px rgba(167,139,250,0.8); } 50% { box-shadow:0 0 20px rgba(167,139,250,1); } }
   @keyframes mythic-pulse { 0%, 100% { box-shadow:0 0 15px rgba(34,211,238,1), 0 0 30px rgba(34,211,238,0.6); transform:scale(1); } 50% { box-shadow:0 0 25px rgba(34,211,238,1), 0 0 50px rgba(34,211,238,0.8); transform:scale(1.05); } }
   @keyframes transcendent-glow { 0%, 100% { box-shadow:0 0 20px rgba(124,58,237,1), 0 0 40px rgba(124,58,237,0.8); transform:scale(1) rotate(0deg); } 50% { box-shadow:0 0 35px rgba(124,58,237,1), 0 0 70px rgba(124,58,237,1), 0 0 100px rgba(124,58,237,0.6); transform:scale(1.08) rotate(2deg); } }
   @keyframes supreme-glow { 0%, 100% { box-shadow:0 0 20px rgba(255,107,157,1), 0 0 40px rgba(255,107,157,0.8); transform:scale(1) rotate(0deg); } 50% { box-shadow:0 0 40px rgba(255,107,157,1), 0 0 80px rgba(255,107,157,1), 0 0 120px rgba(255,107,157,0.8); transform:scale(1.1) rotate(-3deg); } }
+  @keyframes ascended-glow { 0%, 100% { box-shadow:0 0 25px rgba(0,212,255,1), 0 0 50px rgba(0,255,255,0.8); transform:scale(1) rotate(0deg); } 50% { box-shadow:0 0 50px rgba(0,212,255,1), 0 0 100px rgba(0,255,255,1), 0 0 150px rgba(0,212,255,0.8); transform:scale(1.12) rotate(4deg); } }
   .cosmetic-preview { margin:10px 0; padding:10px; border-radius:8px; background:rgba(0,0,0,0.2); text-align:center; font-size:13px; }
   .equip-btn { width:100%; padding:10px; border:none; border-radius:8px; font-weight:600; cursor:pointer; background:#3b82f6; color:#fff; margin-top:8px; transition:0.3s; }
   .equip-btn:hover { background:#60a5fa; transform:translateY(-2px); }
@@ -322,6 +326,11 @@
           <div id="mailList" style="margin-top:8px">Loading messages…</div>
         </div>
 
+        <div class="status-card" id="achievementsCard">
+          <h3>🏆 Achievements</h3>
+          <div id="achievementsList" class="muted">Loading achievements…</div>
+        </div>
+
         <div class="status-card">
           <h3>Chat Usage Summary</h3>
           <div class="summary">
@@ -430,6 +439,7 @@
   const chatbotLockMeta = document.getElementById('chatbotLockMeta');
   const noticesList = document.getElementById('noticesList');
   const mailList = document.getElementById('mailList');
+  const achievementsList = document.getElementById('achievementsList');
 
   const totalChatsEl = document.getElementById('totalChats');
   const weeklyChatsEl = document.getElementById('weeklyChats');
@@ -820,10 +830,77 @@
       } else if (mood === 'calm') {
         petAvatar.style.animation = 'cosmetic-pulse 2s infinite';
       }
+
+      // Celebration checks (birthday / join anniversary) for special messages + confetti
+      try {
+        const dobStr = currentProfile?.dob; // ISO date or yyyy-mm-dd
+        const joinedStr = currentProfile?.createdAt;
+        const today = new Date();
+
+        const isSameMonthDay = (dateStr) => {
+          if (!dateStr) return false;
+          const d = new Date(dateStr);
+          return d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+        };
+
+        if (isSameMonthDay(dobStr)) {
+          showCelebration("🎉 Happy Birthday! Your pet is celebrating with you!");
+          showConfetti(3000);
+        } else if (isSameMonthDay(joinedStr)) {
+          showCelebration("🎊 Happy Join Anniversary! Your companion is proud of you!");
+          showConfetti(3000);
+        }
+      } catch (e) { /* ignore */ }
     } catch (e) {
       console.warn('Pet display failed:', e);
     }
   }
+
+  // Celebration helpers
+  function showCelebration(message){
+    const el = document.getElementById('petGreeting');
+    if (!el) return;
+    el.textContent = message;
+    el.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,0.7))';
+  }
+
+  // Lightweight confetti using emojis
+  function showConfetti(durationMs=2500){
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.zIndex = 9999;
+    document.body.appendChild(overlay);
+
+    const emojis = ['🎉','✨','🎊','⭐','💫','🌟'];
+    const count = 40;
+    for (let i=0;i<count;i++){
+      const span = document.createElement('span');
+      span.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      span.style.position = 'absolute';
+      span.style.fontSize = (Math.random()*24 + 18) + 'px';
+      span.style.left = Math.floor(Math.random()*100) + '%';
+      span.style.top = '-10%';
+      span.style.transform = `rotate(${Math.floor(Math.random()*360)}deg)`;
+      span.style.animation = 'fallConfetti 2.6s ease-in forwards';
+      overlay.appendChild(span);
+    }
+
+    setTimeout(()=>{ overlay.remove(); }, durationMs);
+  }
+
+  // Add confetti keyframes once
+  (function addConfettiStyles(){
+    if (document.getElementById('ascended-confetti-style')) return;
+    const style = document.createElement('style');
+    style.id = 'ascended-confetti-style';
+    style.textContent = `@keyframes fallConfetti { from { transform: translateY(-10vh); opacity: 1; } to { transform: translateY(100vh); opacity: 0.2; } }`;
+    document.head.appendChild(style);
+  })();
 
   // ---------- COSMETIC ANIMATIONS INJECTOR ----------
   function injectCosmeticAnimations() {
@@ -946,6 +1023,7 @@
       applyCosmetics(data.settings);
       loadAndDisplayPet(data.settings);
       renderWarningsFromProfile(data);
+      renderAchievements(data);
       return data;
     } catch (err) {
       console.error('fetchProfile error', err);
@@ -987,20 +1065,10 @@
   }
 
   // ---------- Mailbox ----------
-  async function fetchMailbox(){
-    try{
-      // Ensure CSRF is ready before hitting protected endpoints
-      if (!isCSRFLoaded) {
-        await loadCSRF();
-      }
-
-      const res = await fetch(`${API}/api/me`, { headers: authHeaders(), credentials:'include' });
-
   function renderMailbox(items){
     mailList.innerHTML = '';
     if(items.length===0){ mailList.textContent = 'No messages.'; return; }
     items.slice(0,10).forEach(m=>{
-      currentProfile = data;
       const wrap = document.createElement('div');
       wrap.className = 'mail-item';
       const title = m.title || (m.type === 'reward' ? 'Reward' : 'Message');
@@ -1016,6 +1084,15 @@
       wrap.appendChild(actions);
       mailList.appendChild(wrap);
     });
+  }
+
+  async function fetchMailbox(){
+    try{
+      const res = await fetch(`${API}/api/mailbox`, { headers: authHeaders() });
+      if (!res.ok) { mailList.textContent = 'No messages.'; return; }
+      const data = await res.json();
+      renderMailbox(Array.isArray(data) ? data : []);
+    } catch (err) { mailList.textContent = 'No messages.'; }
   }
 
   async function fetchWarnings() {
@@ -1048,6 +1125,51 @@
     d.style.padding = '8px';
     d.innerHTML = `<strong style="color:var(--danger)">You have ${c} warning(s)</strong><div style="font-size:12px;color:rgba(255,255,255,0.8)">Contact admin for details.</div>`;
     warningsContainer.appendChild(d);
+  }
+
+  // ---------- Achievements ----------
+  function computeAchievements(profile){
+    const ach = [];
+    const unlocked = profile?.settings?.unlocked || {};
+    const titles = unlocked.titleEffects || [];
+    const pets = unlocked.virtualPets || [];
+
+    const ASCENDED_PETS = ['godling-pet','leviathan-pet','sentinel-pet','chimera-pet','reaper-pet'];
+    const SUPREME_PETS = ['dragon-pet','phoenix-pet','unicorn-pet','wolf-pet','fairy-pet'];
+
+    if (pets.some(p=>ASCENDED_PETS.includes(p))) {
+      ach.push({icon:'💠', name:'Ascended Companion', desc:'Own an ASCENDED tier pet'});
+    }
+    if (pets.some(p=>SUPREME_PETS.includes(p))) {
+      ach.push({icon:'🔥', name:'Supreme Tamer', desc:'Own a SUPREME tier pet'});
+    }
+    if (titles.includes('absolute-sovereign')) {
+      ach.push({icon:'👑', name:'Absolute Sovereign', desc:'Unlocked exclusive sovereign title'});
+    }
+
+    // Starter milestone: any cosmetic unlocked
+    const anyUnlocked = Object.values(unlocked).some(v=>Array.isArray(v) && v.length>0);
+    if (anyUnlocked) {
+      ach.push({icon:'✨', name:'First Unlock', desc:'Unlocked your first cosmetic'});
+    }
+
+    return ach;
+  }
+
+  function renderAchievements(profile){
+    if (!achievementsList) return;
+    const list = computeAchievements(profile);
+    if (!list.length) { achievementsList.textContent = 'No achievements yet. Visit the Shop and Cosmetics to unlock some!'; return; }
+    const html = list.map(a=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px dashed rgba(255,255,255,0.07)">
+        <div style="font-size:22px">${a.icon}</div>
+        <div>
+          <div style="font-weight:700">${a.name}</div>
+          <div class="mutedSmall">${a.desc}</div>
+        </div>
+      </div>
+    `).join('');
+    achievementsList.innerHTML = html;
   }
 
   function calculateProfilePct(data) {
@@ -1267,7 +1389,9 @@
       { value:'eternal-flames', label:'Eternal Flames (TRANSCENDENT)', tier:'transcendent', preview:'🔥💫 Infinite Fire' },
       { value:'void-emperor', label:'Void Emperor (TRANSCENDENT)', tier:'transcendent', preview:'👑🌌 Void Royalty' },
       { value:'singularity-crown', label:'Singularity Crown (SUPREME)', tier:'supreme', preview:'🌀👑 Gravity Ring' },
-      { value:'hypernova-crest', label:'Hypernova Crest (SUPREME)', tier:'supreme', preview:'🌠 Radiant Nova' }
+      { value:'hypernova-crest', label:'Hypernova Crest (SUPREME)', tier:'supreme', preview:'🌠 Radiant Nova' },
+      { value:'primordial-halo', label:'Primordial Halo (ASCENDED)', tier:'ascended', preview:'✨👑 Infinite Dimensional Aura' },
+      { value:'genesis-crown', label:'Genesis Crown (ASCENDED)', tier:'ascended', preview:'🌌🔍 Origin of Realms' }
     ],
     nameStyles: [
       { value:'gradient-gold', label:'Gradient Gold', tier:'rare', preview:'Golden Text' },
@@ -1281,7 +1405,9 @@
       { value:'divine-script', label:'Divine Script (TRANSCENDENT)', tier:'transcendent', preview:'✨☀️ Divine Writing' },
       { value:'reality-bender', label:'Reality Bender (TRANSCENDENT)', tier:'transcendent', preview:'🌀💫 Reality Shift' },
       { value:'solar-corona', label:'Solar Corona (SUPREME)', tier:'supreme', preview:'☀️🔥 Stellar Ink' },
-      { value:'luminous-aether', label:'Luminous Aether (SUPREME)', tier:'supreme', preview:'✨🪐 Aether Text' }
+      { value:'luminous-aether', label:'Luminous Aether (SUPREME)', tier:'supreme', preview:'✨🪐 Aether Text' },
+      { value:'omniversal-script', label:'Omniversal Script (ASCENDED)', tier:'ascended', preview:'📖✨ Beyond Words' },
+      { value:'void-tongue', label:'Void Tongue (ASCENDED)', tier:'ascended', preview:'🌑💬 Speaks Darkness' }
     ],
     animatedNameEffects: [
       { value:'rainbow-wave', label:'Rainbow Wave', tier:'rare', preview:'🌈 Wave' },
@@ -1295,7 +1421,9 @@
       { value:'dimension-rift', label:'Dimension Rift (TRANSCENDENT)', tier:'transcendent', preview:'🌀✨ Reality Tear' },
       { value:'infinity-spiral', label:'Infinity Spiral (TRANSCENDENT)', tier:'transcendent', preview:'♾️ Infinite Loop' },
       { value:'quantum-flare', label:'Quantum Flare (SUPREME)', tier:'supreme', preview:'⚛️🔥 Quantum Burst' },
-      { value:'stellar-rune', label:'Stellar Rune (SUPREME)', tier:'supreme', preview:'🌟🔮 Arcane Light' }
+      { value:'stellar-rune', label:'Stellar Rune (SUPREME)', tier:'supreme', preview:'🌟🔮 Arcane Light' },
+      { value:'chaos-vortex', label:'Chaos Vortex (ASCENDED)', tier:'ascended', preview:'🌪️💥 Universe Collapses' },
+      { value:'cosmic-tear', label:'Cosmic Tear (ASCENDED)', tier:'ascended', preview:'🔓🌌 Fabric Rips Open' }
     ],
     animatedBorders: [
       { value:'pulse-glow', label:'Pulsing Glow', tier:'rare', preview:'🌟 Pulse' },
@@ -1309,7 +1437,9 @@
       { value:'supernova', label:'Supernova (TRANSCENDENT)', tier:'transcendent', preview:'💥🌟 Star Explosion' },
       { value:'universe-edge', label:'Universe Edge (TRANSCENDENT)', tier:'transcendent', preview:'🌌✨ Cosmic Boundary' },
       { value:'event-horizon', label:'Event Horizon (SUPREME)', tier:'supreme', preview:'🌀🛡️ Light-Bending Shield' },
-      { value:'aurora-blade', label:'Aurora Blade (SUPREME)', tier:'supreme', preview:'🌈⚔️ Radiant Edge' }
+      { value:'aurora-blade', label:'Aurora Blade (SUPREME)', tier:'supreme', preview:'🌈⚔️ Radiant Edge' },
+      { value:'paradox-shield', label:'Paradox Shield (ASCENDED)', tier:'ascended', preview:'🔀🛡️ Impossible Protection' },
+      { value:'eternity-wall', label:'Eternity Wall (ASCENDED)', tier:'ascended', preview:'♾️🧱 Timeless Fortress' }
     ],
     titleEffects: [
       { value:'crown', label:'Crown', tier:'rare', preview:'👑 Royal' },
@@ -1323,7 +1453,9 @@
       { value:'omniscient', label:'Omniscient (TRANSCENDENT)', tier:'transcendent', preview:'✨👁️✨ All-Knowing' },
       { value:'reality-weaver', label:'Reality Weaver (TRANSCENDENT)', tier:'transcendent', preview:'🌀💫 Reality Creator' },
       { value:'omni-throne', label:'Omni Throne (SUPREME)', tier:'supreme', preview:'👑🌌 Throne of Realms' },
-      { value:'crown-of-light', label:'Crown of Light (SUPREME)', tier:'supreme', preview:'💡👑 Radiant Sovereign' }
+      { value:'crown-of-light', label:'Crown of Light (SUPREME)', tier:'supreme', preview:'💡👑 Radiant Sovereign' },
+      { value:'absolute-sovereign', label:'Absolute Sovereign (ASCENDED)', tier:'ascended', preview:'👑💎 Ruler of All Worlds' },
+      { value:'apex-divinity', label:'Apex Divinity (ASCENDED)', tier:'ascended', preview:'✨👁️ Beyond Gods' }
     ],
     chatColors: [
       { value:'#60a5fa', label:'Sky Blue', tier:'rare', preview:'#60a5fa' },
@@ -1339,7 +1471,9 @@
       { value:'#5b21b6', label:'Transcendent Deep Purple (TRANSCENDENT)', tier:'transcendent', preview:'#5b21b6' },
       { value:'#4c1d95', label:'Transcendent Ultra Violet (TRANSCENDENT)', tier:'transcendent', preview:'#4c1d95' },
       { value:'#ff6b9d', label:'Supreme Roseflare (SUPREME)', tier:'supreme', preview:'#ff6b9d' },
-      { value:'#12fff7', label:'Supreme Neon Frost (SUPREME)', tier:'supreme', preview:'#12fff7' }
+      { value:'#12fff7', label:'Supreme Neon Frost (SUPREME)', tier:'supreme', preview:'#12fff7' },
+      { value:'#ff00ff', label:'Ascended Magenta (ASCENDED)', tier:'ascended', preview:'#ff00ff' },
+      { value:'#00ffff', label:'Ascended Cyan (ASCENDED)', tier:'ascended', preview:'#00ffff' }
     ],
     backgrounds: [
       { value:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200', label:'Aurora', tier:'rare' },
@@ -1353,14 +1487,21 @@
       { value:'https://images.unsplash.com/photo-1484589065579-248aad0d8b13?q=80&w=1200', label:'Transcendent Void (TRANSCENDENT)', tier:'transcendent' },
       { value:'https://images.unsplash.com/photo-1545243424-0ce743321e11?q=80&w=1200', label:'Transcendent Dimension (TRANSCENDENT)', tier:'transcendent' },
       { value:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200', label:'Supreme Aurora Crown (SUPREME)', tier:'supreme' },
-      { value:'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200', label:'Supreme Stellar Gate (SUPREME)', tier:'supreme' }
+      { value:'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200', label:'Supreme Stellar Gate (SUPREME)', tier:'supreme' },
+      { value:'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1200', label:'Ascended Genesis (ASCENDED)', tier:'ascended' },
+      { value:'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200', label:'Ascended Infinity (ASCENDED)', tier:'ascended' }
     ],
     virtualPets: [
       { value:'dragon-pet', label:'Dragon Companion (SUPREME)', tier:'supreme', preview:'🐉 Majestic Dragon', price: 9999 },
       { value:'phoenix-pet', label:'Phoenix Ally (SUPREME)', tier:'supreme', preview:'🔥🐦 Eternal Phoenix', price: 9999 },
       { value:'unicorn-pet', label:'Unicorn Spirit (SUPREME)', tier:'supreme', preview:'🦄 Mythical Unicorn', price: 9999 },
       { value:'wolf-pet', label:'Shadow Wolf (SUPREME)', tier:'supreme', preview:'🐺 Dark Guardian', price: 9999 },
-      { value:'fairy-pet', label:'Magic Fairy (SUPREME)', tier:'supreme', preview:'🧚 Ethereal Fairy', price: 9999 }
+      { value:'fairy-pet', label:'Magic Fairy (SUPREME)', tier:'supreme', preview:'🧚 Ethereal Fairy', price: 9999 },
+      { value:'godling-pet', label:'Godling (ASCENDED)', tier:'ascended', preview:'⭐👶 Divine Child', price: 19999 },
+      { value:'leviathan-pet', label:'Leviathan (ASCENDED)', tier:'ascended', preview:'🐋🌊 Primordial Beast', price: 19999 },
+      { value:'sentinel-pet', label:'Sentinel (ASCENDED)', tier:'ascended', preview:'🤖💫 Void Guardian', price: 19999 },
+      { value:'chimera-pet', label:'Chimera (ASCENDED)', tier:'ascended', preview:'🦁🐉🦅 Tri-Beast', price: 19999 },
+      { value:'reaper-pet', label:'Grim Reaper (ASCENDED)', tier:'ascended', preview:'💀⚰️ Death Eternal', price: 19999 }
     ]
   };
 
@@ -1535,6 +1676,7 @@
       currentProfile.settings.unlocked = data.unlocked;
       renderShop(); // Update shop to show new balance and ownership
       renderCosmetics(); // Update cosmetics to reflect unlocked items
+      renderAchievements(currentProfile); // Update achievements after purchase
       alert(`✅ ${data.message}`);
     } catch (e) {
       alert('❌ Failed to purchase cosmetic');
