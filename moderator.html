@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moderator Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    * { box-sizing: border-box; }
+    
+    body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #1a1a3e, #0d0d2b);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+    }
+    
+    .sidebar {
+        width: 260px;
+        background: rgba(138,43,226,0.15);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid rgba(138,43,226,0.3);
+    }
+
+    .sidebar h2 {
+        font-size: 18px;
+        color: #9b59ff;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+    }
+
+    .menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        background: rgba(138,43,226,0.1);
+        border-radius: 10px;
+        text-decoration: none;
+        color: #cbd5e1;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+    .menu a:hover {
+        background: rgba(138,43,226,0.2);
+        color: #9b59ff;
+        transform: translateX(5px);
+    }
+
+    .content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+    }
+
+    .section {
+        display: none;
+        animation: fadeIn 0.4s ease-in;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: rgba(138,43,226,0.1);
+        padding: 20px;
+        border-radius: 15px;
+        backdrop-filter: blur(12px);
+        margin-bottom: 25px;
+        border: 1px solid rgba(138,43,226,0.2);
+    }
+
+    .card h3 {
+        margin-top: 0;
+        color: #9b59ff;
+        font-size: 18px;
+        border-bottom: 1px solid rgba(138,43,226,0.2);
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(138,43,226,0.2);
+        margin: 8px 0;
+        background: rgba(0,0,0,0.3);
+        color: white;
+        font-family: inherit;
+    }
+
+    button {
+        padding: 12px 18px;
+        background: linear-gradient(135deg, #7c3aed, #a855f7);
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        color: white;
+        transition: 0.3s;
+        margin: 5px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+    }
+
+    .flag-card {
+        padding: 15px;
+        background: rgba(255,100,100,0.1);
+        border-left: 4px solid #ff6464;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .stat-card {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        background: rgba(138,43,226,0.1);
+        border: 1px solid rgba(138,43,226,0.2);
+    }
+
+    .stat-card .number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #9b59ff;
+        margin-bottom: 5px;
+    }
+
+    h2 {
+        color: #9b59ff;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <h2>⚖️ MODERATOR</h2>
+
+    <div class="menu">
+        <a onclick="showSection('dashboard')"><i class="fa fa-dashboard"></i> Dashboard</a>
+        <a onclick="showSection('reported')"><i class="fa fa-flag"></i> Reported Content</a>
+        <a onclick="showSection('appeals')"><i class="fa fa-inbox"></i> Review Appeals</a>
+        <a onclick="showSection('actions')"><i class="fa fa-gavel"></i> Moderation Actions</a>
+        <a onclick="showSection('suspensions')"><i class="fa fa-ban"></i> Suspensions</a>
+        <a onclick="showSection('reports')"><i class="fa fa-chart-bar"></i> Reports</a>
+        <a onclick="logout()"><i class="fa fa-sign-out"></i> Logout</a>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- ============================================ -->
+    <!-- 1. DASHBOARD -->
+    <!-- ============================================ -->
+    <div id="dashboard" class="section active">
+        <h2>⚖️ Moderation Dashboard</h2>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="number" id="pendingReports">0</div>
+                <div class="label">Pending Reports</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="flaggedMessages">0</div>
+                <div class="label">Flagged Messages</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="activeSuspensions">0</div>
+                <div class="label">Suspensions</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="resolvedToday">0</div>
+                <div class="label">Resolved Today</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Quick Actions</h3>
+            <button onclick="showSection('reported')">🚩 View Reported Content</button>
+            <button onclick="showSection('suspensions')">⛔ Manage Suspensions</button>
+            <button onclick="showSection('reports')">📊 View Reports</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 2. REPORTED CONTENT -->
+    <!-- ============================================ -->
+    <div id="reported" class="section">
+        <h2>🚩 Reported Content</h2>
+
+        <div class="card">
+            <h3>Filter & Search</h3>
+            <select id="reportStatus">
+                <option value="">All Reports</option>
+                <option value="pending">Pending</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="resolved">Resolved</option>
+            </select>
+            <button onclick="loadReports()">🔍 Filter</button>
+        </div>
+
+        <div class="card">
+            <h3>Content Flagged by Users</h3>
+            <div id="reportsList" style="max-height: 500px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading reports...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 3. APPEALS -->
+    <!-- ============================================ -->
+    <div id="appeals" class="section">
+        <h2>📨 Review Student Appeals</h2>
+
+        <div class="card">
+            <h3>Pending Appeals</h3>
+            <div id="appealsList" style="max-height: 500px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading appeals...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Appeal Details</h3>
+            <textarea id="appealNote" placeholder="Your moderation note..." style="min-height: 80px;"></textarea>
+            <button onclick="approveAppeal()">✅ Approve Appeal</button>
+            <button onclick="rejectAppeal()" style="background: linear-gradient(135deg, #ff6b6b, #ff8c8c);">❌ Reject Appeal</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 4. MODERATION ACTIONS -->
+    <!-- ============================================ -->
+    <div id="actions" class="section">
+        <h2>⚔️ Moderation Actions</h2>
+
+        <div class="card">
+            <h3>Issue Warning</h3>
+            <input type="text" id="warnRoll" placeholder="Student roll number">
+            <select id="warnReason">
+                <option value="">Select reason...</option>
+                <option value="inappropriate">Inappropriate Content</option>
+                <option value="spam">Spam</option>
+                <option value="harassment">Harassment</option>
+                <option value="misinformation">Misinformation</option>
+                <option value="other">Other</option>
+            </select>
+            <textarea id="warnDetails" placeholder="Warning details..." style="min-height: 80px;"></textarea>
+            <button onclick="issueWarning()">⚠️ Issue Warning</button>
+        </div>
+
+        <div class="card">
+            <h3>Content Actions</h3>
+            <input type="text" id="contentId" placeholder="Content ID to flag/delete">
+            <button onclick="flagContent()" style="background: linear-gradient(135deg, #ff9f43, #ffa502);">🚩 Flag Content</button>
+            <button onclick="deleteContent()" style="background: linear-gradient(135deg, #ff6b6b, #ff8c8c);">🗑️ Delete Content</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 5. SUSPENSIONS -->
+    <!-- ============================================ -->
+    <div id="suspensions" class="section">
+        <h2>⛔ Manage Suspensions</h2>
+
+        <div class="card">
+            <h3>Suspend Student</h3>
+            <input type="text" id="suspendRoll" placeholder="Student roll number">
+            <select id="suspendReason">
+                <option value="">Select reason...</option>
+                <option value="severe-violation">Severe Violation</option>
+                <option value="repeated-warnings">Repeated Warnings</option>
+                <option value="harassment">Harassment</option>
+                <option value="abuse">Abuse</option>
+            </select>
+            <input type="number" id="suspendHours" placeholder="Suspension duration (hours)" min="1">
+            <button onclick="suspendStudent()" style="background: linear-gradient(135deg, #ff6b6b, #ff8c8c);">⛔ Suspend</button>
+        </div>
+
+        <div class="card">
+            <h3>Active Suspensions</h3>
+            <div id="suspensionsList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading suspensions...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 6. REPORTS -->
+    <!-- ============================================ -->
+    <div id="reports" class="section">
+        <h2>📊 Moderation Reports</h2>
+
+        <div class="card">
+            <h3>Generate Report</h3>
+            <button onclick="generateDailyReport()">📅 Daily Report</button>
+            <button onclick="generateWeeklyReport()">📊 Weekly Report</button>
+            <button onclick="generateMonthlyReport()">📈 Monthly Report</button>
+        </div>
+
+        <div class="card">
+            <h3>Report Content</h3>
+            <pre id="reportContent" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto;"></pre>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API = 'https://smart-chatbot-backend-w5tq.onrender.com';
+let csrfToken = "";
+
+function getToken() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
+}
+
+async function loadCSRF() {
+  try {
+    const res = await fetch(`${API}/api/csrf-token`, { method: "GET", credentials: "include" });
+    const data = await res.json();
+    csrfToken = data.csrfToken || "";
+  } catch (e) {
+    console.error("CSRF load error:", e);
+  }
+}
+
+async function secureFetch(url, options = {}) {
+  const token = getToken();
+  if (!token) {
+    alert('Session expired');
+    window.location.href = 'index.html';
+    return null;
+  }
+
+  options.credentials = 'include';
+  options.headers = options.headers || {};
+  options.headers['Authorization'] = `Bearer ${token}`;
+  options.headers['x-csrf-token'] = csrfToken;
+  
+  try {
+    const res = await fetch(url, options);
+    if (res.status === 401 || res.status === 403) {
+      alert('Access denied. Moderators only.');
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+      return null;
+    }
+    return res;
+  } catch (err) {
+    console.error('Fetch error:', err);
+    return null;
+  }
+}
+
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
+}
+
+function logout() {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+}
+
+async function loadReports() {
+  const status = document.getElementById('reportStatus')?.value;
+  const res = await secureFetch(`${API}/api/moderator/reports?status=${status || ''}`);
+  if (!res || !res.ok) return;
+  
+  const reports = await res.json();
+  const container = document.getElementById('reportsList');
+  container.innerHTML = reports.map(r => `
+    <div class="flag-card">
+      <strong>${r.reportReason || 'Report'}</strong> by ${r.reportedBy}<br>
+      <span style="opacity: 0.7; font-size: 12px;">Target: ${r.targetStudent}<br>${new Date(r.createdAt).toLocaleString()}</span><br>
+      <button onclick="reviewReport('${r._id}')" style="margin-top: 8px; padding: 6px 12px; font-size: 12px;">👁️ Review</button>
+    </div>
+  `).join('') || '<p style="opacity: 0.6;">No reports found</p>';
+}
+
+async function issueWarning() {
+  const roll = document.getElementById('warnRoll')?.value;
+  const reason = document.getElementById('warnReason')?.value;
+  const details = document.getElementById('warnDetails')?.value;
+  if (!roll || !reason) return alert('Fill all fields');
+  
+  const res = await secureFetch(`${API}/api/moderator/warn-student`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll, reason, details })
+  });
+  
+  if (res && res.ok) {
+    alert('✅ Warning issued');
+  } else {
+    alert('❌ Failed to issue warning');
+  }
+}
+
+async function suspendStudent() {
+  const roll = document.getElementById('suspendRoll')?.value;
+  const reason = document.getElementById('suspendReason')?.value;
+  const hours = parseInt(document.getElementById('suspendHours')?.value || 0);
+  if (!roll || !reason || !hours) return alert('Fill all fields');
+  
+  const res = await secureFetch(`${API}/api/moderator/suspend-student`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll, reason, suspensionHours: hours })
+  });
+  
+  if (res && res.ok) {
+    alert(`✅ ${roll} suspended for ${hours} hours`);
+  } else {
+    alert('❌ Failed to suspend');
+  }
+}
+
+async function generateDailyReport() {
+  const res = await secureFetch(`${API}/api/moderator/report/daily`);
+  if (!res || !res.ok) return;
+  
+  const data = await res.json();
+  document.getElementById('reportContent').textContent = JSON.stringify(data, null, 2);
+}
+
+async function initModerator() {
+  const token = getToken();
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  await loadCSRF();
+  loadReports();
+  showSection('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', initModerator);
+</script>
+
+</body>
+</html>

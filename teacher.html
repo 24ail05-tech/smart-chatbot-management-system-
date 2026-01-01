@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teacher Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    * { box-sizing: border-box; }
+    
+    body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #1a3a3a, #0d2d2d);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+    }
+    
+    .sidebar {
+        width: 260px;
+        background: rgba(16,185,129,0.15);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid rgba(16,185,129,0.3);
+    }
+
+    .sidebar h2 {
+        font-size: 18px;
+        color: #10b981;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+    }
+
+    .menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        background: rgba(16,185,129,0.1);
+        border-radius: 10px;
+        text-decoration: none;
+        color: #cbd5e1;
+        transition: 0.3s;
+        cursor: pointer;
+    }
+
+    .menu a:hover {
+        background: rgba(16,185,129,0.2);
+        color: #10b981;
+        transform: translateX(5px);
+    }
+
+    .content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+    }
+
+    .section {
+        display: none;
+        animation: fadeIn 0.4s ease-in;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: rgba(16,185,129,0.1);
+        padding: 20px;
+        border-radius: 15px;
+        backdrop-filter: blur(12px);
+        margin-bottom: 25px;
+        border: 1px solid rgba(16,185,129,0.2);
+    }
+
+    .card h3 {
+        margin-top: 0;
+        color: #10b981;
+        font-size: 18px;
+        border-bottom: 1px solid rgba(16,185,129,0.2);
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(16,185,129,0.2);
+        margin: 8px 0;
+        background: rgba(0,0,0,0.3);
+        color: white;
+        font-family: inherit;
+    }
+
+    button {
+        padding: 12px 18px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        color: white;
+        transition: 0.3s;
+        margin: 5px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+    }
+
+    .student-card {
+        padding: 15px;
+        background: rgba(16,185,129,0.05);
+        border-left: 4px solid #10b981;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .stat-card {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.2);
+    }
+
+    .stat-card .number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #10b981;
+        margin-bottom: 5px;
+    }
+
+    h2 {
+        color: #10b981;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th, td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(16,185,129,0.2);
+        text-align: left;
+    }
+
+    th {
+        color: #10b981;
+        font-weight: 600;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <h2>👨‍🏫 TEACHER</h2>
+
+    <div class="menu">
+        <a onclick="showSection('dashboard')"><i class="fa fa-dashboard"></i> Dashboard</a>
+        <a onclick="showSection('class')"><i class="fa fa-users"></i> My Class</a>
+        <a onclick="showSection('assignments')"><i class="fa fa-tasks"></i> Assignments</a>
+        <a onclick="showSection('attendance')"><i class="fa fa-calendar"></i> Attendance</a>
+        <a onclick="showSection('grades')"><i class="fa fa-chart-bar"></i> Grades & Performance</a>
+        <a onclick="showSection('announcements')"><i class="fa fa-bullhorn"></i> Announcements</a>
+        <a onclick="showSection('messages')"><i class="fa fa-envelope"></i> Messages</a>
+        <a onclick="logout()"><i class="fa fa-sign-out"></i> Logout</a>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- ============================================ -->
+    <!-- 1. DASHBOARD -->
+    <!-- ============================================ -->
+    <div id="dashboard" class="section active">
+        <h2>👨‍🏫 Teacher Dashboard</h2>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="number" id="totalStudents">0</div>
+                <div class="label">Total Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="presentToday">0</div>
+                <div class="label">Present Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="pendingAssignments">0</div>
+                <div class="label">Pending Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="classAverage">0%</div>
+                <div class="label">Class Average</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Quick Actions</h3>
+            <button onclick="showSection('class')">👥 View Class</button>
+            <button onclick="showSection('assignments')">📋 Create Assignment</button>
+            <button onclick="showSection('announcements')">📢 Post Announcement</button>
+            <button onclick="showSection('attendance')">✅ Mark Attendance</button>
+        </div>
+
+        <div class="card">
+            <h3>Recent Activity</h3>
+            <div id="recentActivity" style="max-height: 300px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading recent activity...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 2. MY CLASS -->
+    <!-- ============================================ -->
+    <div id="class" class="section">
+        <h2>👥 My Class</h2>
+
+        <div class="card">
+            <h3>Class Information</h3>
+            <p><strong>Subject:</strong> <span id="subject">Loading...</span></p>
+            <p><strong>Class:</strong> <span id="classInfo">Loading...</span></p>
+            <p><strong>Total Students:</strong> <span id="classSize">0</span></p>
+            <button onclick="editClassInfo()">✏️ Edit Class Info</button>
+        </div>
+
+        <div class="card">
+            <h3>Class Roster</h3>
+            <input type="text" id="searchStudent" placeholder="Search student...">
+            <div id="classList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading students...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Performance Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Attendance</th>
+                        <th>Avg. Score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="performanceTable">
+                    <tr><td colspan="4" style="text-align: center; opacity: 0.6;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 3. ASSIGNMENTS -->
+    <!-- ============================================ -->
+    <div id="assignments" class="section">
+        <h2>📋 Assignments & Tasks</h2>
+
+        <div class="card">
+            <h3>Create New Assignment</h3>
+            <input type="text" id="assignTitle" placeholder="Assignment title">
+            <textarea id="assignDescription" placeholder="Description..." style="min-height: 100px;"></textarea>
+            <input type="date" id="assignDueDate" placeholder="Due date">
+            <select id="assignType">
+                <option value="homework">Homework</option>
+                <option value="project">Project</option>
+                <option value="quiz">Quiz</option>
+                <option value="exam">Exam</option>
+            </select>
+            <button onclick="createAssignment()">➕ Create Assignment</button>
+        </div>
+
+        <div class="card">
+            <h3>Active Assignments</h3>
+            <div id="assignmentsList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading assignments...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Student Submissions</h3>
+            <div id="submissionsList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading submissions...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 4. ATTENDANCE -->
+    <!-- ============================================ -->
+    <div id="attendance" class="section">
+        <h2>✅ Attendance Tracking</h2>
+
+        <div class="card">
+            <h3>Mark Attendance</h3>
+            <input type="date" id="attendanceDate" placeholder="Date">
+            <div id="attendanceForm" style="max-height: 300px; overflow-y: auto; margin: 15px 0;">
+                <p style="opacity: 0.6;">Loading students...</p>
+            </div>
+            <button onclick="submitAttendance()">✅ Submit Attendance</button>
+        </div>
+
+        <div class="card">
+            <h3>Attendance Report</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTable">
+                    <tr><td colspan="4" style="text-align: center; opacity: 0.6;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 5. GRADES & PERFORMANCE -->
+    <!-- ============================================ -->
+    <div id="grades" class="section">
+        <h2>📊 Grades & Performance</h2>
+
+        <div class="card">
+            <h3>Enter Grades</h3>
+            <input type="text" id="gradeStudentRoll" placeholder="Student roll">
+            <input type="text" id="gradeAssignment" placeholder="Assignment/Exam name">
+            <input type="number" id="gradeScore" placeholder="Score" min="0" max="100">
+            <button onclick="submitGrade()">📝 Submit Grade</button>
+        </div>
+
+        <div class="card">
+            <h3>Class Performance</h3>
+            <div id="performanceChart" style="padding: 20px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <p style="text-align: center; opacity: 0.6;">📈 Performance graph would display here</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Student Progress Tracking</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Latest Score</th>
+                        <th>Trend</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="progressTable">
+                    <tr><td colspan="4" style="text-align: center; opacity: 0.6;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 6. ANNOUNCEMENTS -->
+    <!-- ============================================ -->
+    <div id="announcements" class="section">
+        <h2>📢 Announcements</h2>
+
+        <div class="card">
+            <h3>Post New Announcement</h3>
+            <input type="text" id="announcementTitle" placeholder="Title">
+            <textarea id="announcementContent" placeholder="Announcement content..." style="min-height: 120px;"></textarea>
+            <select id="announcementType">
+                <option value="general">General</option>
+                <option value="urgent">Urgent</option>
+                <option value="assignment">Assignment Related</option>
+                <option value="event">Event/Important Date</option>
+            </select>
+            <button onclick="postAnnouncement()">📤 Post Announcement</button>
+        </div>
+
+        <div class="card">
+            <h3>Recent Announcements</h3>
+            <div id="announcementsList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">No announcements yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 7. MESSAGES -->
+    <!-- ============================================ -->
+    <div id="messages" class="section">
+        <h2>💬 Messages</h2>
+
+        <div class="card">
+            <h3>Send Message to Class</h3>
+            <textarea id="classMessage" placeholder="Message to entire class..." style="min-height: 100px;"></textarea>
+            <button onclick="sendClassMessage()">📧 Send to Class</button>
+        </div>
+
+        <div class="card">
+            <h3>Send Individual Message</h3>
+            <input type="text" id="messageTo" placeholder="Student roll">
+            <textarea id="individualMessage" placeholder="Message..." style="min-height: 100px;"></textarea>
+            <button onclick="sendIndividualMessage()">📧 Send Message</button>
+        </div>
+
+        <div class="card">
+            <h3>Message History</h3>
+            <div id="messageHistory" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">No messages yet</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API = 'https://smart-chatbot-backend-w5tq.onrender.com';
+let csrfToken = "";
+
+function getToken() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
+}
+
+async function loadCSRF() {
+  try {
+    const res = await fetch(`${API}/api/csrf-token`, { method: "GET", credentials: "include" });
+    const data = await res.json();
+    csrfToken = data.csrfToken || "";
+  } catch (e) {
+    console.error("CSRF load error:", e);
+  }
+}
+
+async function secureFetch(url, options = {}) {
+  const token = getToken();
+  if (!token) {
+    alert('Session expired');
+    window.location.href = 'index.html';
+    return null;
+  }
+
+  options.credentials = 'include';
+  options.headers = options.headers || {};
+  options.headers['Authorization'] = `Bearer ${token}`;
+  options.headers['x-csrf-token'] = csrfToken;
+  
+  try {
+    const res = await fetch(url, options);
+    if (res.status === 401 || res.status === 403) {
+      alert('Access denied. Teachers only.');
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+      return null;
+    }
+    return res;
+  } catch (err) {
+    console.error('Fetch error:', err);
+    return null;
+  }
+}
+
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
+}
+
+function logout() {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+}
+
+async function createAssignment() {
+  const title = document.getElementById('assignTitle')?.value;
+  const description = document.getElementById('assignDescription')?.value;
+  const dueDate = document.getElementById('assignDueDate')?.value;
+  const type = document.getElementById('assignType')?.value;
+  
+  if (!title || !description || !dueDate) return alert('Fill all fields');
+  
+  const res = await secureFetch(`${API}/api/teacher/create-assignment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, description, dueDate, type })
+  });
+  
+  if (res && res.ok) {
+    alert('✅ Assignment created');
+    document.getElementById('assignTitle').value = '';
+    document.getElementById('assignDescription').value = '';
+  } else {
+    alert('❌ Failed to create assignment');
+  }
+}
+
+async function postAnnouncement() {
+  const title = document.getElementById('announcementTitle')?.value;
+  const content = document.getElementById('announcementContent')?.value;
+  const type = document.getElementById('announcementType')?.value;
+  
+  if (!title || !content) return alert('Fill all fields');
+  
+  const res = await secureFetch(`${API}/api/teacher/post-announcement`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, content, type })
+  });
+  
+  if (res && res.ok) {
+    alert('✅ Announcement posted');
+    document.getElementById('announcementTitle').value = '';
+    document.getElementById('announcementContent').value = '';
+  } else {
+    alert('❌ Failed to post');
+  }
+}
+
+async function submitGrade() {
+  const roll = document.getElementById('gradeStudentRoll')?.value;
+  const assignment = document.getElementById('gradeAssignment')?.value;
+  const score = parseInt(document.getElementById('gradeScore')?.value || 0);
+  
+  if (!roll || !assignment || !score) return alert('Fill all fields');
+  
+  const res = await secureFetch(`${API}/api/teacher/submit-grade`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll, assignment, score })
+  });
+  
+  if (res && res.ok) {
+    alert('✅ Grade submitted');
+  } else {
+    alert('❌ Failed to submit grade');
+  }
+}
+
+async function initTeacher() {
+  const token = getToken();
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  await loadCSRF();
+  showSection('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', initTeacher);
+</script>
+
+</body>
+</html>

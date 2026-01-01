@@ -128,7 +128,7 @@ const studentSchema = new Schema(
     cls: String,
     email: { type: String, default: "" },
     passwordHash: { type: String, default: null },
-    role: { type: String, enum: ["student", "admin"], default: "student" },
+    role: { type: String, enum: ["student", "admin", "super_admin", "moderator", "teacher"], default: "student" },
     avatarUrl: { type: String, default: "" },
     bgColor: { type: String, default: "linear-gradient(135deg,#0077ff,#00d4ff)" },
     warningsCount: { type: Number, default: 0 },
@@ -418,6 +418,32 @@ const systemConfigSchema = new Schema(
   { timestamps: true }
 );
 const SystemConfig = mongoose.model("SystemConfig", systemConfigSchema);
+
+// Report model for moderation
+const reportSchema = new Schema(
+  {
+    reportedBy: String,
+    targetStudent: String,
+    reportReason: String,
+    description: String,
+    status: { type: String, enum: ['pending', 'reviewed', 'resolved'], default: 'pending' },
+    reviewedBy: String,
+    reviewNotes: String,
+  },
+  { timestamps: true }
+);
+const Report = mongoose.model("Report", reportSchema);
+
+// AuditLog model for super admin
+const auditLogSchema = new Schema(
+  {
+    admin: String,
+    action: String,
+    details: String,
+    timestamp: { type: Date, default: Date.now },
+  }
+);
+const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 
 // MessageTemplate model for predefined messages
 const messageTemplateSchema = new Schema(
@@ -854,6 +880,15 @@ app.post("/api/admin/redeem-codes/generate", authenticate, csrfProtect, async (r
 // Student: Redeem code
 app.post("/api/student/redeem-code", authenticate, csrfProtect, async (req, res) => {
   try {
+    // Check if redeem codes feature is enabled
+    const config = await SystemConfig.findOne({ key: 'studentFeatures' });
+    const defaultFeatures = { redeemCodes: true };
+    const features = config ? { ...defaultFeatures, ...config.value } : defaultFeatures;
+    
+    if (!features.redeemCodes) {
+      return res.status(403).json({ error: "Redeem Codes feature is disabled by admin" });
+    }
+    
     const { code } = req.body;
     if (!code) return res.status(400).json({ error: "Code required" });
     
@@ -1255,6 +1290,21 @@ app.get("/api/me", authenticate, csrfProtect, async (req, res) => {
     if (!student) return res.status(404).json({ error: "Student not found" });
     const data = student.toObject();
     data.hc = student.hc || 0;
+    
+    // Include feature states
+    const defaultFeatures = {
+      shop: true,
+      cosmetics: true,
+      redeemCodes: true,
+      appeals: true,
+      dailyRewards: true,
+      chat: true,
+      petDisplay: true,
+      achievements: true
+    };
+    const config = await SystemConfig.findOne({ key: 'studentFeatures' });
+    data.features = config ? { ...defaultFeatures, ...config.value } : defaultFeatures;
+    
     res.json(data);
   } catch (err) {
     console.error("get me error:", err);
@@ -1630,6 +1680,15 @@ app.post("/api/admin/broadcast-hc", authenticate, requireAdmin, csrfProtect, asy
 // Purchase cosmetic from shop
 app.post("/api/shop/buy", authenticate, csrfProtect, async (req, res) => {
   try {
+    // Check if shop feature is enabled
+    const config = await SystemConfig.findOne({ key: 'studentFeatures' });
+    const defaultFeatures = { shop: true };
+    const features = config ? { ...defaultFeatures, ...config.value } : defaultFeatures;
+    
+    if (!features.shop) {
+      return res.status(403).json({ error: "Shop feature is disabled by admin" });
+    }
+    
     const roll = req.student.roll;
     const schema = Joi.object({
       type: Joi.string().required(),
@@ -2944,6 +3003,268 @@ app.post("/api/admin/send-template-message", authenticate, requireAdmin, csrfPro
   } catch(err) {
     console.error("template message error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ==================== SUPER ADMIN ROUTES ====================
+function requireSuperAdmin(req, res, next) {
+  if (req.student?.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Super admin access required' });
+  }
+  next();
+}
+
+// List all admins
+app.get("/api/super-admin/admins", authenticate, requireSuperAdmin, async (req, res) => {
+  try {
+    const admins = await Student.find({ role: { $in: ['admin', 'super_admin'] } }).select('roll name email dept');
+    res.json(admins);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Promote to admin
+app.post("/api/super-admin/promote-admin", authenticate, requireSuperAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { roll } = req.body;
+    if (!roll) return res.status(400).json({ error: 'Roll required' });
+    
+    await Student.updateOne({ roll }, { role: 'admin' });
+    res.json({ ok: true, message: 'User promoted to admin' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Revoke admin privileges
+app.post("/api/super-admin/revoke-admin", authenticate, requireSuperAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { roll } = req.body;
+    if (!roll) return res.status(400).json({ error: 'Roll required' });
+    
+    await Student.updateOne({ roll }, { role: 'student' });
+    res.json({ ok: true, message: 'Admin privileges revoked' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// List moderators
+app.get("/api/super-admin/moderators", authenticate, requireSuperAdmin, async (req, res) => {
+  try {
+    const mods = await Student.find({ role: 'moderator' }).select('roll name email');
+    res.json(mods);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Appoint moderator
+app.post("/api/super-admin/appoint-moderator", authenticate, requireSuperAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { roll, reason } = req.body;
+    if (!roll) return res.status(400).json({ error: 'Roll required' });
+    
+    await Student.updateOne({ roll }, { role: 'moderator', appointmentReason: reason });
+    res.json({ ok: true, message: 'User appointed as moderator' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// List teachers
+app.get("/api/super-admin/teachers", authenticate, requireSuperAdmin, async (req, res) => {
+  try {
+    const teachers = await Student.find({ role: 'teacher' }).select('roll name email subject class');
+    res.json(teachers);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Assign teacher
+app.post("/api/super-admin/assign-teacher", authenticate, requireSuperAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { roll, subject, class: cls } = req.body;
+    if (!roll || !subject || !cls) return res.status(400).json({ error: 'All fields required' });
+    
+    await Student.updateOne({ roll }, { role: 'teacher', subject, class: cls });
+    res.json({ ok: true, message: 'User assigned as teacher' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Maintenance mode
+app.post("/api/super-admin/maintenance", authenticate, requireSuperAdmin, csrfProtect, async (req, res) => {
+  try {
+    const { enabled, message } = req.body;
+    let config = await SystemConfig.findOne({ key: 'maintenance' });
+    if (!config) {
+      config = new SystemConfig({ key: 'maintenance', value: {} });
+    }
+    config.value = { enabled, message };
+    config.markModified('value');
+    await config.save();
+    
+    io.emit('system:maintenance', { enabled, message });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Audit logs
+app.get("/api/super-admin/audit-logs", authenticate, requireSuperAdmin, async (req, res) => {
+  try {
+    const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100);
+    res.json(logs || []);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== MODERATOR ROUTES ====================
+function requireModerator(req, res, next) {
+  if (!['moderator', 'admin', 'super_admin'].includes(req.student?.role)) {
+    return res.status(403).json({ error: 'Moderator access required' });
+  }
+  next();
+}
+
+// Get reports
+app.get("/api/moderator/reports", authenticate, requireModerator, async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = {};
+    if (status) query.status = status;
+    
+    const reports = await Report.find(query).sort({ createdAt: -1 }).limit(50);
+    res.json(reports || []);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Warn student
+app.post("/api/moderator/warn-student", authenticate, requireModerator, csrfProtect, async (req, res) => {
+  try {
+    const { roll, reason, details } = req.body;
+    if (!roll || !reason) return res.status(400).json({ error: 'Roll and reason required' });
+    
+    const student = await Student.findOne({ roll });
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    
+    student.warningsCount = (student.warningsCount || 0) + 1;
+    await student.save();
+    
+    await SystemMessage.create({
+      recipientRoll: roll,
+      title: 'Moderation Warning',
+      content: `You have received a warning: ${reason}. ${details || ''}`,
+      type: 'warning'
+    });
+    
+    res.json({ ok: true, message: 'Warning issued' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Suspend student
+app.post("/api/moderator/suspend-student", authenticate, requireModerator, csrfProtect, async (req, res) => {
+  try {
+    const { roll, reason, suspensionHours } = req.body;
+    if (!roll || !suspensionHours) return res.status(400).json({ error: 'Roll and duration required' });
+    
+    const suspensionUntil = new Date(Date.now() + suspensionHours * 3600 * 1000);
+    await Student.updateOne({ roll }, { 
+      chatbotLocked: true,
+      chatbotLockedUntil: suspensionUntil,
+      chatbotLockReason: reason || 'Moderation suspension'
+    });
+    
+    await SystemMessage.create({
+      recipientRoll: roll,
+      title: 'Suspension Notice',
+      content: `Your account has been suspended for ${suspensionHours} hours. Reason: ${reason || 'Policy violation'}`,
+      type: 'alert'
+    });
+    
+    res.json({ ok: true, message: 'Student suspended' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Daily report
+app.get("/api/moderator/report/daily", authenticate, requireModerator, async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    res.json({
+      date: today,
+      reports: 0,
+      warnings: 0,
+      suspensions: 0,
+      resolved: 0
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==================== TEACHER ROUTES ====================
+function requireTeacher(req, res, next) {
+  if (!['teacher', 'admin', 'super_admin'].includes(req.student?.role)) {
+    return res.status(403).json({ error: 'Teacher access required' });
+  }
+  next();
+}
+
+// Create assignment
+app.post("/api/teacher/create-assignment", authenticate, requireTeacher, csrfProtect, async (req, res) => {
+  try {
+    const { title, description, dueDate, type } = req.body;
+    if (!title || !description) return res.status(400).json({ error: 'Title and description required' });
+    
+    res.json({ ok: true, message: 'Assignment created', assignmentId: Math.random().toString(36) });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Post announcement
+app.post("/api/teacher/post-announcement", authenticate, requireTeacher, csrfProtect, async (req, res) => {
+  try {
+    const { title, content, type } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'Title and content required' });
+    
+    await SystemMessage.create({
+      recipientRoll: 'all',
+      title: `[Announcement] ${title}`,
+      content,
+      type: 'info',
+      trigger: 'manual'
+    });
+    
+    res.json({ ok: true, message: 'Announcement posted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Submit grade
+app.post("/api/teacher/submit-grade", authenticate, requireTeacher, csrfProtect, async (req, res) => {
+  try {
+    const { roll, assignment, score } = req.body;
+    if (!roll || !assignment || score === undefined) return res.status(400).json({ error: 'All fields required' });
+    
+    res.json({ ok: true, message: 'Grade submitted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Super Admin Panel — Ultimate Control</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    * { box-sizing: border-box; }
+    
+    body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #000a1a, #0d1428);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+    }
+    
+    .sidebar {
+        width: 280px;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid rgba(255,0,0,0.2);
+    }
+
+    .sidebar h2 {
+        font-size: 18px;
+        background: linear-gradient(135deg, #ff3333, #ff6666);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 30px;
+        letter-spacing: 2px;
+    }
+
+    .menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        background: rgba(255,0,0,0.1);
+        border-radius: 10px;
+        text-decoration: none;
+        color: #fff;
+        transition: 0.3s;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+    }
+
+    .menu a:hover {
+        background: rgba(255,0,0,0.2);
+        border-left-color: #ff3333;
+        transform: translateX(5px);
+    }
+
+    .content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+    }
+
+    .section {
+        display: none;
+        animation: fadeIn 0.4s ease-in;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: rgba(255,0,0,0.08);
+        padding: 20px;
+        border-radius: 15px;
+        backdrop-filter: blur(12px);
+        margin-bottom: 25px;
+        border: 1px solid rgba(255,0,0,0.2);
+    }
+
+    .card h3 {
+        margin-top: 0;
+        color: #ff6666;
+        font-size: 18px;
+        border-bottom: 2px solid rgba(255,0,0,0.2);
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,0,0,0.2);
+        margin: 8px 0;
+        background: rgba(0,0,0,0.3);
+        color: white;
+        font-family: inherit;
+    }
+
+    button {
+        padding: 12px 18px;
+        background: linear-gradient(135deg, #ff3333, #ff6666);
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        color: white;
+        transition: 0.3s;
+        margin: 5px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
+    }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .stat-card {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        background: rgba(255,0,0,0.1);
+        border: 1px solid rgba(255,0,0,0.2);
+    }
+
+    .stat-card .number {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #ff6666;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    th, td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255,0,0,0.2);
+        text-align: left;
+    }
+
+    th {
+        color: #ff6666;
+        font-weight: 600;
+    }
+
+    .warning-banner {
+        background: linear-gradient(135deg, rgba(255,0,0,0.2), rgba(255,51,51,0.1));
+        border-left: 4px solid #ff3333;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        color: #ff6666;
+        margin-bottom: 20px;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- ================= SIDEBAR ================= -->
+<div class="sidebar">
+    <h2>👑 SUPER ADMIN</h2>
+
+    <div class="menu">
+        <a onclick="showSection('dashboard')"><i class="fa fa-crown"></i> Dashboard</a>
+        <a onclick="showSection('admins')"><i class="fa fa-shield"></i> Manage Admins</a>
+        <a onclick="showSection('moderators')"><i class="fa fa-gavel"></i> Manage Moderators</a>
+        <a onclick="showSection('teachers')"><i class="fa fa-chalkboard"></i> Manage Teachers</a>
+        <a onclick="showSection('system')"><i class="fa fa-cogs"></i> System Settings</a>
+        <a onclick="showSection('audit')"><i class="fa fa-history"></i> Audit Logs</a>
+        <a onclick="showSection('analytics')"><i class="fa fa-chart-line"></i> Analytics</a>
+        <a onclick="showSection('security')"><i class="fa fa-lock"></i> Security</a>
+        <a onclick="logout()"><i class="fa fa-sign-out"></i> Logout</a>
+    </div>
+</div>
+
+<!-- ================= MAIN CONTENT ================= -->
+<div class="content">
+
+    <!-- ============================================ -->
+    <!-- 1. DASHBOARD -->
+    <!-- ============================================ -->
+    <div id="dashboard" class="section active">
+        <h2>👑 Super Admin Control Panel</h2>
+        
+        <div class="warning-banner">
+            <strong>⚠️ SUPREME AUTHORITY</strong> - You have absolute control over the entire system, including all admins.
+        </div>
+        
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="number" id="totalUsers">—</div>
+                <div class="label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalAdmins">—</div>
+                <div class="label">Active Admins</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalModerators">—</div>
+                <div class="label">Moderators</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalTeachers">—</div>
+                <div class="label">Teachers</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Quick Actions</h3>
+            <button onclick="showSection('system')">🔧 System Settings</button>
+            <button onclick="showSection('security')">🔐 Security Audit</button>
+            <button onclick="showSection('audit')">📋 View All Logs</button>
+            <button onclick="showSection('admins')">👥 Manage Staff</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 2. MANAGE ADMINS -->
+    <!-- ============================================ -->
+    <div id="admins" class="section">
+        <h2>🛡️ Manage Administrators</h2>
+
+        <div class="card">
+            <h3>Promote User to Admin</h3>
+            <input type="text" id="promoteRoll" placeholder="Enter student roll number">
+            <button onclick="promoteToAdmin()">⬆️ Promote to Admin</button>
+        </div>
+
+        <div class="card">
+            <h3>Current Administrators</h3>
+            <div id="adminsList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading admins...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Revoke Admin Privileges</h3>
+            <input type="text" id="revokeRoll" placeholder="Admin roll to demote">
+            <button onclick="revokeAdminPrivileges()" style="background: linear-gradient(135deg, #ff6b35, #ff8c42);">⬇️ Demote Admin</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 3. MANAGE MODERATORS -->
+    <!-- ============================================ -->
+    <div id="moderators" class="section">
+        <h2>⚖️ Manage Moderators</h2>
+
+        <div class="card">
+            <h3>Appoint Moderator</h3>
+            <input type="text" id="modRoll" placeholder="Enter student roll">
+            <textarea id="modReason" placeholder="Reason for appointment" style="min-height: 80px;"></textarea>
+            <button onclick="appointModerator()">⭐ Appoint Moderator</button>
+        </div>
+
+        <div class="card">
+            <h3>Active Moderators</h3>
+            <div id="moderatorsList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading moderators...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 4. MANAGE TEACHERS -->
+    <!-- ============================================ -->
+    <div id="teachers" class="section">
+        <h2>👨‍🏫 Manage Teachers</h2>
+
+        <div class="card">
+            <h3>Assign Teacher Role</h3>
+            <input type="text" id="teachRoll" placeholder="Enter user roll">
+            <input type="text" id="teachSubject" placeholder="Subject (e.g., Mathematics, Physics)">
+            <input type="text" id="teachClass" placeholder="Class (e.g., 10A, 12B)">
+            <button onclick="assignTeacher()">📚 Assign as Teacher</button>
+        </div>
+
+        <div class="card">
+            <h3>Active Teachers</h3>
+            <div id="teachersList" style="max-height: 400px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading teachers...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 5. SYSTEM SETTINGS -->
+    <!-- ============================================ -->
+    <div id="system" class="section">
+        <h2>⚙️ System Configuration</h2>
+
+        <div class="card">
+            <h3>Global Settings</h3>
+            <label>
+                <input type="checkbox" id="maintenanceMode"> 
+                <span>🔴 Enable Maintenance Mode (blocks student access)</span>
+            </label>
+            <textarea id="maintenanceMessage" placeholder="Maintenance message for students" style="min-height: 80px;"></textarea>
+            <button onclick="updateMaintenanceMode()">💾 Save Maintenance Settings</button>
+        </div>
+
+        <div class="card">
+            <h3>Backup & Restore</h3>
+            <p style="opacity: 0.8;">Database operations (available for certified super admins only)</p>
+            <button onclick="triggerBackup()" style="background: linear-gradient(135deg, #00aa44, #00dd66);">💾 Create Backup</button>
+            <button onclick="viewBackups()" style="background: linear-gradient(135deg, #0066cc, #0099ff);">📦 View Backups</button>
+        </div>
+
+        <div class="card">
+            <h3>System Health</h3>
+            <button onclick="checkSystemHealth()" style="background: linear-gradient(135deg, #00aa44, #00dd66);">🏥 Run Health Check</button>
+            <pre id="healthOutput" style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;"></pre>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 6. AUDIT LOGS -->
+    <!-- ============================================ -->
+    <div id="audit" class="section">
+        <h2>📋 Complete Audit Trail</h2>
+
+        <div class="card">
+            <h3>Filter Logs</h3>
+            <input type="text" id="auditFilter" placeholder="Filter by user, action, or date">
+            <button onclick="loadAuditLogs()">🔍 Refresh Logs</button>
+        </div>
+
+        <div class="card">
+            <h3>System Activity</h3>
+            <div id="auditLogsContainer" style="max-height: 500px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Loading audit logs...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 7. ANALYTICS -->
+    <!-- ============================================ -->
+    <div id="analytics" class="section">
+        <h2>📊 System Analytics</h2>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="number" id="activeSessions">—</div>
+                <div class="label">Active Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="avgResponseTime">—</div>
+                <div class="label">Avg Response Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="systemUptime">—</div>
+                <div class="label">System Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="errorRate">—</div>
+                <div class="label">Error Rate</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Usage Statistics</h3>
+            <p>📈 Peak hours: <strong id="peakHours">—</strong></p>
+            <p>💬 Total messages: <strong id="totalMessages">—</strong></p>
+            <p>🛒 Shop transactions: <strong id="totalTransactions">—</strong></p>
+            <button onclick="exportAnalytics()">📥 Export Report</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 8. SECURITY -->
+    <!-- ============================================ -->
+    <div id="security" class="section">
+        <h2>🔐 Security & Compliance</h2>
+
+        <div class="warning-banner">
+            <strong>🔒 SECURITY NOTICE</strong> - All changes are logged and monitored. Unauthorized actions will be flagged.
+        </div>
+
+        <div class="card">
+            <h3>Account Security</h3>
+            <button onclick="forcePasswordReset()" style="background: linear-gradient(135deg, #ff6b35, #ff8c42);">🔑 Force Reset Admin Passwords</button>
+            <button onclick="enableTwoFactor()" style="background: linear-gradient(135deg, #ff6b35, #ff8c42);">🔐 Enable 2FA for All Admins</button>
+            <button onclick="viewSecurityLogs()">📋 View Security Logs</button>
+        </div>
+
+        <div class="card">
+            <h3>Suspicious Activity</h3>
+            <div id="suspiciousActivity" style="max-height: 300px; overflow-y: auto;">
+                <p style="opacity: 0.6;">Scanning for unusual activity...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>IP Whitelist</h3>
+            <input type="text" id="ipAddress" placeholder="e.g., 192.168.1.1">
+            <button onclick="addIPWhitelist()">➕ Add IP to Whitelist</button>
+            <div id="ipList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API = 'https://smart-chatbot-backend-w5tq.onrender.com';
+let csrfToken = "";
+
+function getToken() {
+  return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
+}
+
+async function loadCSRF() {
+  try {
+    const res = await fetch(`${API}/api/csrf-token`, {
+      method: "GET",
+      credentials: "include"
+    });
+    const data = await res.json();
+    csrfToken = data.csrfToken || "";
+  } catch (e) {
+    console.error("CSRF load error:", e);
+  }
+}
+
+async function secureFetch(url, options = {}) {
+  const token = getToken();
+  if (!token) {
+    alert('Session expired. Please login again.');
+    window.location.href = 'index.html';
+    return null;
+  }
+
+  options.credentials = 'include';
+  options.headers = options.headers || {};
+  options.headers['Authorization'] = `Bearer ${token}`;
+  options.headers['x-csrf-token'] = csrfToken;
+  
+  try {
+    const res = await fetch(url, options);
+    if (res.status === 401 || res.status === 403) {
+      alert('Unauthorized: Access denied. Super admins only.');
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+      return null;
+    }
+    return res;
+  } catch (err) {
+    console.error('Fetch error:', err);
+    return null;
+  }
+}
+
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
+}
+
+function logout() {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+}
+
+async function promoteToAdmin() {
+  const roll = document.getElementById('promoteRoll')?.value;
+  if (!roll) return alert('Enter roll number');
+  
+  const res = await secureFetch(`${API}/api/super-admin/promote-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll })
+  });
+  
+  if (res && res.ok) {
+    alert(`✅ ${roll} promoted to Admin`);
+    loadAdmins();
+  } else {
+    alert('❌ Failed to promote');
+  }
+}
+
+async function loadAdmins() {
+  const res = await secureFetch(`${API}/api/super-admin/admins`);
+  if (!res || !res.ok) return;
+  
+  const admins = await res.json();
+  const container = document.getElementById('adminsList');
+  container.innerHTML = admins.map(a => `
+    <div style="padding: 12px; background: rgba(255,0,0,0.1); border-radius: 8px; margin: 8px 0; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong>${a.name}</strong> (${a.roll})<br>
+        <span style="opacity: 0.7; font-size: 12px;">Email: ${a.email}</span>
+      </div>
+      <button onclick="revokeAdmin('${a.roll}')" style="background: #ff3333; padding: 8px 12px; font-size: 12px;">Revoke</button>
+    </div>
+  `).join('');
+}
+
+async function revokeAdminPrivileges() {
+  const roll = document.getElementById('revokeRoll')?.value;
+  if (!roll) return alert('Enter roll number');
+  
+  const res = await secureFetch(`${API}/api/super-admin/revoke-admin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll })
+  });
+  
+  if (res && res.ok) {
+    alert(`✅ ${roll} demoted from Admin`);
+    loadAdmins();
+  } else {
+    alert('❌ Failed to demote');
+  }
+}
+
+async function appointModerator() {
+  const roll = document.getElementById('modRoll')?.value;
+  const reason = document.getElementById('modReason')?.value;
+  if (!roll) return alert('Enter roll number');
+  
+  const res = await secureFetch(`${API}/api/super-admin/appoint-moderator`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll, reason: reason || 'No reason provided' })
+  });
+  
+  if (res && res.ok) {
+    alert(`✅ ${roll} appointed as Moderator`);
+    loadModerators();
+  } else {
+    alert('❌ Failed to appoint');
+  }
+}
+
+async function loadModerators() {
+  const res = await secureFetch(`${API}/api/super-admin/moderators`);
+  if (!res || !res.ok) return;
+  
+  const mods = await res.json();
+  const container = document.getElementById('moderatorsList');
+  container.innerHTML = mods.map(m => `
+    <div style="padding: 12px; background: rgba(255,0,0,0.1); border-radius: 8px; margin: 8px 0;">
+      <strong>${m.name}</strong> (${m.roll})<br>
+      <span style="opacity: 0.7; font-size: 12px;">Reason: ${m.appointmentReason || 'N/A'}</span>
+    </div>
+  `).join('');
+}
+
+async function assignTeacher() {
+  const roll = document.getElementById('teachRoll')?.value;
+  const subject = document.getElementById('teachSubject')?.value;
+  const cls = document.getElementById('teachClass')?.value;
+  if (!roll || !subject || !cls) return alert('Fill all fields');
+  
+  const res = await secureFetch(`${API}/api/super-admin/assign-teacher`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ roll, subject, class: cls })
+  });
+  
+  if (res && res.ok) {
+    alert(`✅ ${roll} assigned as Teacher`);
+    loadTeachers();
+  } else {
+    alert('❌ Failed to assign');
+  }
+}
+
+async function loadTeachers() {
+  const res = await secureFetch(`${API}/api/super-admin/teachers`);
+  if (!res || !res.ok) return;
+  
+  const teachers = await res.json();
+  const container = document.getElementById('teachersList');
+  container.innerHTML = teachers.map(t => `
+    <div style="padding: 12px; background: rgba(255,0,0,0.1); border-radius: 8px; margin: 8px 0;">
+      <strong>${t.name}</strong> (${t.roll})<br>
+      <span style="opacity: 0.7; font-size: 12px;">Subject: ${t.subject || 'N/A'} | Class: ${t.class || 'N/A'}</span>
+    </div>
+  `).join('');
+}
+
+async function updateMaintenanceMode() {
+  const enabled = document.getElementById('maintenanceMode')?.checked;
+  const message = document.getElementById('maintenanceMessage')?.value;
+  
+  const res = await secureFetch(`${API}/api/super-admin/maintenance`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled, message })
+  });
+  
+  if (res && res.ok) {
+    alert('✅ Maintenance mode updated');
+  } else {
+    alert('❌ Failed to update');
+  }
+}
+
+async function checkSystemHealth() {
+  const output = document.getElementById('healthOutput');
+  output.textContent = '⏳ Running health check...';
+  
+  const res = await secureFetch(`${API}/api/health`);
+  if (res && res.ok) {
+    const data = await res.json();
+    output.textContent = JSON.stringify(data, null, 2);
+  } else {
+    output.textContent = '❌ Health check failed';
+  }
+}
+
+async function loadAuditLogs() {
+  const res = await secureFetch(`${API}/api/super-admin/audit-logs`);
+  if (!res || !res.ok) return;
+  
+  const logs = await res.json();
+  const container = document.getElementById('auditLogsContainer');
+  container.innerHTML = logs.slice(0, 50).map(log => `
+    <div style="padding: 12px; background: rgba(255,0,0,0.05); border-left: 3px solid #ff6666; margin: 8px 0; border-radius: 4px;">
+      <strong>${log.action}</strong> by ${log.admin}<br>
+      <span style="opacity: 0.7; font-size: 12px;">${new Date(log.timestamp).toLocaleString()}</span>
+    </div>
+  `).join('');
+}
+
+async function initSuperAdmin() {
+  const token = getToken();
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  await loadCSRF();
+  loadAdmins();
+  loadModerators();
+  loadTeachers();
+  loadAuditLogs();
+  showSection('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', initSuperAdmin);
+</script>
+
+</body>
+</html>
