@@ -2220,6 +2220,35 @@ app.delete("/api/course-plan/:id", authenticate, requireAdmin, csrfProtect, asyn
 });
 
 // ---------------------- Admin Debug: Student Settings ----------------------
+// Get specific student for admin details view
+app.get("/api/admin/student/:roll", authenticate, requireAdmin, csrfProtect, async (req, res) => {
+  try {
+    const student = await Student.findOne({ roll: req.params.roll }).select("-passwordHash -refreshTokens");
+    if (!student) return res.status(404).json({ error: `Student '${req.params.roll}' not found in database` });
+    res.json({
+      _id: student._id,
+      roll: student.roll,
+      name: student.name,
+      email: student.email,
+      department: student.department,
+      class: student.class,
+      hc: student.hc || 0,
+      isVerified: student.isVerified || false,
+      isLocked: student.isLocked || false,
+      lockReason: student.lockReason || null,
+      role: student.role || 'student',
+      warnings: student.warnings || [],
+      lastLogin: student.lastLogin || null,
+      createdAt: student.createdAt,
+      updatedAt: student.updatedAt,
+      hcHistory: student.hcHistory || [],
+    });
+  } catch (err) {
+    console.error("admin get student error:", err);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
 app.get("/api/admin/debug/student/:roll", authenticate, requireAdmin, csrfProtect, async (req, res) => {
   try {
     const student = await Student.findOne({ roll: req.params.roll });

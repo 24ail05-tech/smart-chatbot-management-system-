@@ -1,730 +1,728 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Settings — Nandha Chatbot</title>
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
+  <title>Settings — Smart Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body {
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
       font-family: "Poppins", sans-serif;
-      height: 100vh;
-      background: linear-gradient(135deg, #0077ff, #00d4ff);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
     }
 
     .container {
-      width: 420px;
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(12px);
-      padding: 35px;
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
       border-radius: 20px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
     }
 
-    h2 {
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
       text-align: center;
-      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 13px;
+    }
+
+    .content {
+      padding: 25px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 16px;
       font-weight: 600;
+      color: #667eea;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .setting-section {
-      margin-bottom: 25px;
-    }
-
-    label {
-      font-size: 15px;
-      font-weight: 500;
-    }
-
-    select, input[type="checkbox"] {
-      margin-top: 10px;
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      background: rgba(255,255,255,0.9);
-      color: #000;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .toggle-row {
+    .setting-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 12px;
     }
 
-    .btn {
+    .setting-item label {
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    select, input[type="text"], input[type="email"] {
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: "Poppins", sans-serif;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .secret-code-box {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      border: 2px solid #667eea;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .secret-code-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .secret-code-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .secret-code-input {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      font-size: 16px;
+      background: white;
+      color: #667eea;
+    }
+
+    .toggle-btn {
+      padding: 10px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .toggle-btn:hover {
+      background: #764ba2;
+      transform: scale(1.05);
+    }
+
+    .security-note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #856404;
+      margin-bottom: 12px;
+    }
+
+    button.btn {
       width: 100%;
       padding: 12px;
       border: none;
       border-radius: 10px;
-      font-size: 15px;
       font-weight: 600;
-      cursor: pointer;
-      margin-top: 20px;
-      background: #005eff;
-      color: white;
-      transition: 0.3s;
-    }
-
-    .btn:hover {
-      background: #00bfff;
-    }
-
-    .danger {
-      background: #ff4444;
-    }
-
-    .danger:hover {
-      background: #ff7777;
-    }
-
-    #saveMsg {
-      text-align: center;
-      margin-top: 10px;
       font-size: 14px;
-      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 10px;
     }
 
-    /* Cosmetics Inventory */
-    .section-title { font-weight: 600; margin: 20px 0 8px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .card { background: rgba(255,255,255,0.18); border-radius: 12px; padding: 12px; color: #000; }
-    .card h4 { margin: 0 0 8px; color:#000; }
-    .item { background: rgba(255,255,255,0.75); border-radius: 10px; padding: 10px; display:flex; justify-content:space-between; align-items:center; }
-    .locked { opacity: 0.6; }
-    .lock-icon { margin-right: 8px; }
-    .equip-btn { padding: 8px 10px; border:none; border-radius:8px; font-weight:600; cursor:pointer; background:#005eff; color:#fff; }
-    .equip-btn[disabled] { background: #999; cursor: not-allowed; }
-    .preview-chip { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; background:#eef; color:#000; }
-    .preview-bg { height:36px; border-radius:10px; background-size:cover; background-position:center; border:1px solid rgba(0,0,0,0.12); }
+    button.btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
 
-    /* Animated effect previews */
-    @keyframes rainbow-wave { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
-    @keyframes shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.6); } 50% { box-shadow: 0 0 20px rgba(59,130,246,1); } }
-    @keyframes rainbow-spin { from { transform: rotate(0deg); filter: hue-rotate(0deg); } to { transform: rotate(360deg); filter: hue-rotate(360deg); } }
+    button.btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
 
-    .animated-preview {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      background: #eef;
-      color: #000;
+    button.btn-secondary {
+      background: #f8f9fa;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    button.btn-secondary:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    button.btn-danger {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    button.btn-danger:hover {
+      background: #ff5252;
+      transform: translateY(-2px);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .info-item {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 14px;
       font-weight: 600;
+      color: #333;
     }
-    .animated-preview.rainbow-wave { animation: rainbow-wave 2s infinite; }
-    .animated-preview.shimmer { animation: shimmer 1.5s infinite; }
-    .animated-preview.pulse-glow { animation: pulse-glow 1.5s infinite; }
-    .animated-preview.rainbow-spin { animation: rainbow-spin 3s infinite; }
-  
-</head>
 
+    .message {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .profile-section {
+      text-align: center;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 12px;
+    }
+
+    .profile-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .profile-roll {
+      font-size: 13px;
+      color: #999;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        border-radius: 15px;
+      }
+
+      .header {
+        padding: 20px;
+      }
+
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .content {
+        padding: 15px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
 <body>
 
-  <div class="container">
-    <h2>Settings</h2>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>⚙️ Settings</h1>
+    <p>Manage your account preferences</p>
+  </div>
 
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-      <input type="text" id="refreshStatus" placeholder="Ready" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.1);color:#fff;font-size:13px;" disabled>
-      <button id="refreshCosmetics" class="btn" style="padding:10px 12px;">🔄 Refresh</button>
-    </div>
+  <!-- Content -->
+  <div class="content">
+    <div id="loadingMessage" class="loading">Loading settings...</div>
 
-    <!-- THEME -->
-    <div class="setting-section">
-      <label>Theme</label>
-      <select id="theme">
-        <option value="system">System Default</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </div>
-
-    <!-- FONT SIZE -->
-    <div class="setting-section">
-      <label>Chat Font Size</label>
-      <select id="fontSize">
-        <option value="small">Small</option>
-        <option value="medium">Medium</option>
-        <option value="large">Large</option>
-      </select>
-    </div>
-
-    <!-- NOTIFICATIONS -->
-    <div class="setting-section">
-      <div class="toggle-row">
-        <label>Enable Notifications</label>
-        <input type="checkbox" id="notifications">
-      </div>
-    </div>
-
-    <!-- SAFE MODE -->
-    <div class="setting-section">
-      <div class="toggle-row">
-        <label>Safe Mode (Strict AI Output)</label>
-        <input type="checkbox" id="safeMode">
-      </div>
-    </div>
-
-    <!-- COSMETICS INVENTORY & EQUIP -->
-    <div class="setting-section">
-      <div class="section-title">Cosmetics Inventory</div>
-      <div class="grid">
-        <div class="card">
-          <h4>Avatar Borders</h4>
-          <div id="inv-avatarBorders"></div>
+    <!-- Profile Section -->
+    <div class="section profile-section" id="profileSection" style="display: none;">
+      <div class="profile-avatar" id="profileAvatar">👤</div>
+      <div class="profile-name" id="profileName">Loading...</div>
+      <div class="profile-roll" id="profileRoll">-</div>
+      <div class="info-grid" style="margin-top: 15px;">
+        <div class="info-item">
+          <div class="info-label">Department</div>
+          <div class="info-value" id="profileDept">-</div>
         </div>
-        <div class="card">
-          <h4>Name Styles</h4>
-          <div id="inv-nameStyles"></div>
+        <div class="info-item">
+          <div class="info-label">Class</div>
+          <div class="info-value" id="profileClass">-</div>
         </div>
-        <div class="card">
-          <h4>Animated Names ✨</h4>
-          <div id="inv-animatedNameEffects"></div>
+        <div class="info-item">
+          <div class="info-label">HC Balance</div>
+          <div class="info-value" id="profileHC">0</div>
         </div>
-        <div class="card">
-          <h4>Animated Borders 🌟</h4>
-          <div id="inv-animatedBorders"></div>
-        </div>
-        <div class="card">
-          <h4>Title Effects 👑</h4>
-          <div id="inv-titleEffects"></div>
-        </div>
-        <div class="card">
-          <h4>Chat Bubble Colors</h4>
-          <div id="inv-chatColors"></div>
-        </div>
-        <div class="card">
-          <h4>Profile Backgrounds</h4>
-          <div id="inv-backgrounds"></div>
+        <div class="info-item">
+          <div class="info-label">Status</div>
+          <div class="info-value" id="profileStatus">Active</div>
         </div>
       </div>
     </div>
 
     <!-- Secret Code Section -->
-    <div class="setting-section" style="background:rgba(255,255,255,0.15);padding:15px;border-radius:12px;border-left:4px solid #667eea;">
-      <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
-        🔐 Your Secret Code
-      </label>
-      <p style="font-size:12px;opacity:0.9;margin:8px 0;">
-        This code is used for password recovery. Keep it safe and never share it!
-      </p>
-      <div style="display:flex;align-items:center;gap:10px;margin:12px 0;">
-        <input type="text" id="secretCodeDisplay" readonly style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);background:rgba(0,0,0,0.2);color:#fff;font-weight:600;letter-spacing:2px;" placeholder="Loading...">
-        <button id="toggleSecretCodeBtn" style="padding:10px 12px;border-radius:8px;border:none;background:rgba(255,255,255,0.3);color:#fff;cursor:pointer;font-size:16px;" title="Show/Hide">👁️</button>
+    <div class="section" id="secretCodeSection" style="display: none;">
+      <div class="section-title">🔐 Security & Recovery</div>
+      
+      <div class="secret-code-box">
+        <div class="secret-code-header">
+          🔑 Your Secret Code
+        </div>
+        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+          This code is required for password recovery. Keep it safe and never share it with anyone!
+        </p>
+        <div class="secret-code-display">
+          <input type="password" id="secretCodeInput" class="secret-code-input" readonly>
+          <button class="toggle-btn" id="toggleSecretCodeBtn" title="Show/Hide">👁️</button>
+        </div>
+        <div class="security-note">
+          ⚠️ Important: Save this code in a secure location. If you lose it, you may have difficulty recovering your account.
+        </div>
+        <button class="btn btn-secondary" id="regenerateSecretCodeBtn">
+          <i class="fas fa-sync-alt"></i> Regenerate Secret Code
+        </button>
       </div>
-      <button id="regenerateSecretCodeBtn" class="btn" style="width:100%;margin-top:10px;background:rgba(102,126,234,0.7);">
-        🔄 Regenerate Secret Code
-      </button>
     </div>
 
-    <button class="btn" id="saveBtn">Save Settings</button>
-    <p id="saveMsg"></p>
+    <!-- Appearance Section -->
+    <div class="section" id="appearanceSection" style="display: none;">
+      <div class="section-title">🎨 Appearance</div>
+      
+      <div class="setting-item">
+        <label>Theme</label>
+        <select id="themeSelect">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="auto">Auto</option>
+        </select>
+      </div>
 
-    <button class="btn danger" id="deleteAccountBtn">Delete Account</button>
-    <button class="btn" id="logoutBtn">Logout</button>
+      <div class="setting-item">
+        <label>Font Size</label>
+        <select id="fontSizeSelect">
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+    </div>
 
+    <!-- Notifications Section -->
+    <div class="section" id="notificationsSection" style="display: none;">
+      <div class="section-title">🔔 Notifications</div>
+      
+      <div class="setting-item">
+        <label>Enable Notifications</label>
+        <input type="checkbox" id="notificationsToggle" checked>
+      </div>
+
+      <div class="setting-item">
+        <label>Sound Effects</label>
+        <input type="checkbox" id="soundToggle" checked>
+      </div>
+
+      <div class="setting-item">
+        <label>Desktop Alerts</label>
+        <input type="checkbox" id="desktopAlertsToggle">
+      </div>
+    </div>
+
+    <!-- Privacy Section -->
+    <div class="section" id="privacySection" style="display: none;">
+      <div class="section-title">🔒 Privacy</div>
+      
+      <div class="setting-item">
+        <label>Public Profile</label>
+        <input type="checkbox" id="publicProfileToggle">
+      </div>
+
+      <div class="setting-item">
+        <label>Show Activity Status</label>
+        <input type="checkbox" id="activityStatusToggle" checked>
+      </div>
+
+      <div class="setting-item">
+        <label>Allow Messages</label>
+        <input type="checkbox" id="allowMessagesToggle" checked>
+      </div>
+    </div>
+
+    <!-- Account Section -->
+    <div class="section" id="accountSection" style="display: none;">
+      <div class="section-title">👤 Account</div>
+      
+      <div class="setting-item">
+        <label>Email</label>
+        <input type="email" id="emailInput" style="width: 100%; flex: 1;" readonly>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <button class="btn btn-secondary" id="changePasswordBtn">
+          <i class="fas fa-key"></i> Change Password
+        </button>
+      </div>
+    </div>
+
+    <!-- Message Display -->
+    <div id="settingMessage" class="message"></div>
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 25px;">
+      <button class="btn btn-primary" id="saveSettingsBtn">
+        <i class="fas fa-save"></i> Save Settings
+      </button>
+      
+      <button class="btn btn-secondary" id="logoutBtn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+
+      <button class="btn btn-danger" id="deleteAccountBtn">
+        <i class="fas fa-trash"></i> Delete Account
+      </button>
+    </div>
   </div>
+</div>
 
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script>
-  const API = "https://smart-chatbot-backend-w5tq.onrender.com";
+<script src="config.js"></script>
+<script>
+const API = 'https://smart-chatbot-backend-w5tq.onrender.com';
 
-  // Accept common token keys
-  function readStoredToken() {
-    return localStorage.getItem('token') ||
-           localStorage.getItem('accessToken') ||
-           localStorage.getItem('authToken') ||
-           sessionStorage.getItem('token') ||
-           sessionStorage.getItem('accessToken') ||
-           sessionStorage.getItem('authToken') || null;
-  }
-  const token = readStoredToken();
-  
-  if (!token) { 
-    console.error('No authentication token found');
-    document.body.innerHTML = '<div style="color:white;padding:20px;text-align:center;">Authentication required. Redirecting...';
-    setTimeout(()=> location.href = 'index.html', 2000);
-  }
+// ==================== UTILITY FUNCTIONS ====================
 
-  let csrfToken = "";
-  async function loadCSRF() {
-    try {
-      const res = await fetch(`${API}/api/csrf-token`, { method: "GET", credentials: "include" });
-      const data = await res.json();
-      csrfToken = data.csrfToken || "";
-    } catch (e) {
-      console.error("CSRF token fetch failed:", e);
-    }
-  }
-  loadCSRF();
+function getToken() {
+  return localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+}
 
-  function authHeaders() {
-    const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-    if (csrfToken) headers['x-csrf-token'] = csrfToken;
-    return headers;
-  }
+function showMessage(message, type) {
+  const el = document.getElementById('settingMessage');
+  el.textContent = message;
+  el.className = `message ${type}`;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
 
-  const invAvatarBorders = document.getElementById('inv-avatarBorders');
-  const invNameStyles = document.getElementById('inv-nameStyles');
-  const invChatColors = document.getElementById('inv-chatColors');
-  const invBackgrounds = document.getElementById('inv-backgrounds');
-  const invAnimatedNameEffects = document.getElementById('inv-animatedNameEffects');
-  const invAnimatedBorders = document.getElementById('inv-animatedBorders');
-  const invTitleEffects = document.getElementById('inv-titleEffects');
-  const refreshBtn = document.getElementById('refreshCosmetics');
-  const refreshStatus = document.getElementById('refreshStatus');
+// ==================== LOAD SETTINGS ====================
 
-  // Form elements
-  const theme = document.getElementById('theme');
-  const fontSize = document.getElementById('fontSize');
-  const notifications = document.getElementById('notifications');
-  const safeMode = document.getElementById('safeMode');
-  const saveBtn = document.getElementById('saveBtn');
-  const saveMsg = document.getElementById('saveMsg');
-  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-
-  const ALL = {
-    avatarBorders: [
-      { value:'glow-blue', label:'Glow Blue', preview:'🔵' },
-      { value:'gold', label:'Gold', preview:'🟡' },
-      { value:'neon-pink', label:'Neon Pink', preview:'🌸' }
-    ],
-    nameStyles: [
-      { value:'gradient-gold', label:'Gradient Gold', preview:'Golden' },
-      { value:'neon', label:'Neon', preview:'Neon' }
-    ],
-    animatedNameEffects: [
-      { value:'rainbow-wave', label:'Rainbow Wave', preview:'🌈 Animated' },
-      { value:'shimmer', label:'Shimmer', preview:'✨ Shiny' }
-    ],
-    animatedBorders: [
-      { value:'pulse-glow', label:'Pulsing Glow', preview:'🌟 Pulse' },
-      { value:'rainbow-spin', label:'Rainbow Spin', preview:'🎨 Spin' }
-    ],
-    titleEffects: [
-      { value:'crown', label:'Crown', preview:'👑 Royal' },
-      { value:'halo', label:'Halo', preview:'⭐ Holy' }
-    ],
-    chatColors: [
-      { value:'#60a5fa', label:'Sky Blue', preview:'#60a5fa' },
-      { value:'#f59e0b', label:'Amber', preview:'#f59e0b' },
-      { value:'#34d399', label:'Emerald', preview:'#34d399' },
-      { value:'#ec4899', label:'Pink', preview:'#ec4899' },
-      { value:'#8b5cf6', label:'Purple', preview:'#8b5cf6' }
-    ],
-    backgrounds: [
-      { value:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop', label:'Aurora' },
-      { value:'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1200&auto=format&fit=crop', label:'Mountains' },
-      { value:'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?q=80&w=1200&auto=format&fit=crop', label:'Nebula' }
-    ]
-  };
-
-  let profile = null;
-
-  function isUnlocked(type, value) {
-    const unlocked = profile?.settings?.unlocked || {};
-    const list = unlocked[type] || [];
-    return Array.isArray(list) && list.includes(value);
-  }
-
-  function currentValueFor(type) {
-    const cos = profile?.settings?.cosmetics || {};
-    if (type === 'avatarBorders') return cos.avatarBorder || null;
-    if (type === 'nameStyles') return cos.nameStyle || null;
-    if (type === 'animatedNameEffects') return cos.animatedNameEffect || null;
-    if (type === 'animatedBorders') return cos.animatedBorder || null;
-    if (type === 'titleEffects') return cos.titleEffect || null;
-    if (type === 'chatColors') return cos.chatColor || cos.chatBubbleColor || null;
-    if (type === 'backgrounds') return cos.backgroundUrl || null;
-    return null;
-  }
-
-  async function equipCosmetic(type, value) {
-    const body = { cosmetics: {} };
-    if (type === 'avatarBorders') body.cosmetics.avatarBorder = value;
-    else if (type === 'nameStyles') body.cosmetics.nameStyle = value;
-    else if (type === 'animatedNameEffects') body.cosmetics.animatedNameEffect = value;
-    else if (type === 'animatedBorders') body.cosmetics.animatedBorder = value;
-    else if (type === 'titleEffects') body.cosmetics.titleEffect = value;
-    else if (type === 'chatColors') { body.cosmetics.chatColor = value; body.cosmetics.chatBubbleColor = value; }
-    else if (type === 'backgrounds') body.cosmetics.backgroundUrl = value;
-
-    try {
-      const res = await fetch(`${API}/api/me/settings`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
-      if (!res.ok) throw new Error('Failed to equip');
-      const data = await res.json();
-      profile = data;
-      renderInventory();
-      saveMsg.style.color = 'lightgreen';
-      saveMsg.textContent = '✔ Cosmetic equipped!';
-    } catch (e) {
-      saveMsg.style.color = 'salmon';
-      saveMsg.textContent = 'Failed to equip item.';
-    }
-  }
-
-  function renderInventory() {
-    // Avatar Borders
-    invAvatarBorders.innerHTML = '';
-    ALL.avatarBorders.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('avatarBorders', item.value);
-      const selected = currentValueFor('avatarBorders') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}<span class="preview-chip">${item.label}</span>`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('avatarBorders', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invAvatarBorders.appendChild(wrap);
-    });
-
-    // Name Styles
-    invNameStyles.innerHTML = '';
-    ALL.nameStyles.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('nameStyles', item.value);
-      const selected = currentValueFor('nameStyles') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}<span class="preview-chip">${item.label}</span>`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('nameStyles', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invNameStyles.appendChild(wrap);
-    });
-
-    // Chat Colors
-    invChatColors.innerHTML = '';
-    ALL.chatColors.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('chatColors', item.value);
-      const selected = currentValueFor('chatColors') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}<span class="preview-chip" style="background:${item.preview}; color:#fff;">${item.label}</span>`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('chatColors', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invChatColors.appendChild(wrap);
-    });
-
-    // Backgrounds
-    invBackgrounds.innerHTML = '';
-    ALL.backgrounds.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('backgrounds', item.value);
-      const selected = currentValueFor('backgrounds') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      const preview = `<div class="preview-bg" style="background-image:url('${item.value}')"></div>`;
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}${preview}`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('backgrounds', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invBackgrounds.appendChild(wrap);
-    });
-
-    // Animated Name Effects
-    invAnimatedNameEffects.innerHTML = '';
-    ALL.animatedNameEffects.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('animatedNameEffects', item.value);
-      const selected = currentValueFor('animatedNameEffects') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      const preview = `<span class="animated-preview ${item.value}">${item.label}</span>`;
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}${preview}`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('animatedNameEffects', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invAnimatedNameEffects.appendChild(wrap);
-    });
-
-    // Animated Borders
-    invAnimatedBorders.innerHTML = '';
-    ALL.animatedBorders.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('animatedBorders', item.value);
-      const selected = currentValueFor('animatedBorders') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      const preview = `<span class="animated-preview ${item.value}">${item.label}</span>`;
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}${preview}`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('animatedBorders', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invAnimatedBorders.appendChild(wrap);
-    });
-
-    // Title Effects
-    invTitleEffects.innerHTML = '';
-    ALL.titleEffects.forEach(item => {
-      const wrap = document.createElement('div');
-      const unlocked = isUnlocked('titleEffects', item.value);
-      const selected = currentValueFor('titleEffects') === item.value;
-      wrap.className = 'item' + (unlocked ? '' : ' locked');
-      const left = document.createElement('div');
-      left.innerHTML = `${unlocked ? '' : '<span class="lock-icon">🔒</span>'}<span class="preview-chip">${item.preview}</span>`;
-      const right = document.createElement('div');
-      const btn = document.createElement('button');
-      btn.className = 'equip-btn';
-      btn.textContent = selected ? 'Equipped' : 'Equip';
-      btn.disabled = !unlocked || selected;
-      btn.onclick = () => equipCosmetic('titleEffects', item.value);
-      right.appendChild(btn);
-      wrap.appendChild(left);
-      wrap.appendChild(right);
-      invTitleEffects.appendChild(wrap);
-    });
-  }
-
-  async function loadSettings() {
-    try {
-      console.log('Loading settings from:', API);
-      const res = await fetch(`${API}/api/me`, { headers: authHeaders() });
-      console.log('Response status:', res.status);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('Load settings failed:', res.status, res.statusText, errorText);
-        if (refreshStatus) refreshStatus.value = `Error: ${res.status}`;
-        if (saveMsg) { saveMsg.style.color = 'salmon'; saveMsg.textContent = errorText || 'Failed to load settings'; }
-        return;
-      }
-      const data = await res.json();
-      console.log('Profile data:', data);
-      
-      if (!data || !data.settings) {
-        console.error('Invalid response data - no settings object');
-        if (saveMsg) { saveMsg.style.color = 'salmon'; saveMsg.textContent = 'Settings not found'; }
-        return;
-      }
-
-      profile = data;
-
-      theme.value = data.settings.theme || 'system';
-      fontSize.value = data.settings.fontSize || 'medium';
-      notifications.checked = !!data.settings.notifications;
-      safeMode.checked = !!data.settings.safeMode;
-
-      renderInventory();
-      if (refreshStatus) refreshStatus.value = 'Ready';
-      console.log('Settings loaded successfully');
-    } catch (err) {
-      console.error('Settings load error:', err);
-      if (saveMsg) { saveMsg.style.color = 'salmon'; saveMsg.textContent = err.message; }
-    }
-  }
-
-  loadSettings();
-
-  // Refresh button - manual reload
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", async () => {
-      if (refreshStatus) refreshStatus.value = '🔄 Refreshing...';
-      refreshBtn.disabled = true;
-      await loadSettings();
-      if (refreshStatus) refreshStatus.value = '✅ Updated!';
-      setTimeout(() => { if (refreshStatus) refreshStatus.value = 'Ready'; refreshBtn.disabled = false; }, 2000);
-    });
-  }
-
-  // Socket.IO real-time cosmetic updates
+async function loadSettings() {
   try {
-    if (typeof io !== 'undefined') {
-      const socket = io(API);
-      socket.on('cosmetic:updated', (data) => {
-        if (refreshStatus) refreshStatus.value = '🔔 Cosmetics updated!';
-        loadSettings();
-        setTimeout(() => { if (refreshStatus) refreshStatus.value = 'Ready'; }, 2000);
-      });
-      socket.on('verified:updated', (data) => {
-        if (refreshStatus) refreshStatus.value = '🎖️ Verified badge updated!';
-        loadSettings();
-        setTimeout(() => { if (refreshStatus) refreshStatus.value = 'Ready'; }, 2000);
-      });
+    const token = getToken();
+    if (!token) {
+      window.location.href = 'index.html';
+      return;
     }
-  } catch (e) {
-    console.warn('Socket.IO not available for realtime updates', e);
+
+    const res = await fetch(`${API}/api/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include'
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) window.location.href = 'index.html';
+      return;
+    }
+
+    const student = await res.json();
+
+    // Hide loading, show content
+    document.getElementById('loadingMessage').style.display = 'none';
+    document.getElementById('profileSection').style.display = 'block';
+    document.getElementById('secretCodeSection').style.display = 'block';
+    document.getElementById('appearanceSection').style.display = 'block';
+    document.getElementById('notificationsSection').style.display = 'block';
+    document.getElementById('privacySection').style.display = 'block';
+    document.getElementById('accountSection').style.display = 'block';
+
+    // Set profile info
+    document.getElementById('profileName').textContent = student.name || 'Student';
+    document.getElementById('profileRoll').textContent = student.roll;
+    document.getElementById('profileDept').textContent = student.dept || '-';
+    document.getElementById('profileClass').textContent = student.cls || '-';
+    document.getElementById('profileHC').textContent = student.hc || 0;
+    document.getElementById('profileStatus').textContent = student.locked ? '🔒 Locked' : '✅ Active';
+    document.getElementById('emailInput').value = student.email || '-';
+
+    // Load settings
+    const settings = student.settings || {};
+    document.getElementById('themeSelect').value = settings.theme || 'light';
+    document.getElementById('fontSizeSelect').value = settings.fontSize || 'medium';
+    document.getElementById('notificationsToggle').checked = settings.notifications !== false;
+    document.getElementById('publicProfileToggle').checked = settings.publicProfile !== false;
+    document.getElementById('activityStatusToggle').checked = settings.activityStatus !== false;
+    document.getElementById('allowMessagesToggle').checked = settings.allowMessages !== false;
+
+    // Load secret code
+    await loadSecretCode();
+
+  } catch (err) {
+    console.error('Load settings error:', err);
+    showMessage('Failed to load settings', 'error');
   }
+}
 
-  // Save non-cosmetic settings
-  saveBtn.addEventListener("click", async () => {
-    const body = {
-      theme: theme.value,
-      fontSize: fontSize.value,
-      notifications: notifications.checked,
-      safeMode: safeMode.checked
-    };
+// ==================== SECRET CODE MANAGEMENT ====================
 
-    try {
-      const res = await fetch(`${API}/api/me/settings`, {
-        method: "PATCH",
-        headers: authHeaders(),
-        body: JSON.stringify(body)
-      });
-      const out = await res.json();
-      saveMsg.style.color = res.ok ? "lightgreen" : "salmon";
-      saveMsg.textContent = res.ok ? "✔ Settings saved!" : (out?.error || 'Failed to save settings');
-    } catch (e) {
-      saveMsg.style.color = "salmon";
-      saveMsg.textContent = 'Failed to save settings';
-    }
-  });
-
-  // Delete account
-  deleteAccountBtn.addEventListener("click", async () => {
-    if (!confirm("Are you sure? This will permanently delete your account.")) return;
-
-    const res = await fetch(`${API}/api/user/delete`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
+async function loadSecretCode() {
+  try {
+    const token = getToken();
+    const res = await fetch(`${API}/api/student/secret-code`, {
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include'
     });
 
     if (res.ok) {
-      localStorage.clear();
-      alert("Account deleted.");
-      window.location.href = "index.html";
-    }
-  });
-
-  // Logout
-  logoutBtn.addEventListener("click", () => {
-    localStorage.clear();
-    window.location.href = "index.html";
-  });
-
-  // Load and display secret code
-  async function loadSecretCode() {
-    try {
-      const token = readStoredToken();
-      const csrfRes = await fetch(`${API}/api/csrf-token`, { credentials: "include" });
-      const csrfData = await csrfRes.json();
-      
-      const res = await fetch(`${API}/api/student/secret-code`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "x-csrf-token": csrfData.csrfToken
-        },
-        credentials: "include"
-      });
-      
       const data = await res.json();
-      if (data.secretCode) {
-        document.getElementById('secretCodeDisplay').value = data.secretCode;
-        // Mask it by default
-        document.getElementById('secretCodeDisplay').type = 'password';
-      }
-    } catch (err) {
-      console.error("Failed to load secret code:", err);
-      document.getElementById('secretCodeDisplay').value = "Error loading";
+      document.getElementById('secretCodeInput').value = data.secretCode || 'N/A';
+      document.getElementById('secretCodeInput').type = 'password';
+      document.getElementById('toggleSecretCodeBtn').textContent = '👁️';
     }
+  } catch (err) {
+    console.error('Load secret code error:', err);
+    document.getElementById('secretCodeInput').value = 'Error loading';
+  }
+}
+
+document.getElementById('toggleSecretCodeBtn').addEventListener('click', () => {
+  const input = document.getElementById('secretCodeInput');
+  const btn = document.getElementById('toggleSecretCodeBtn');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
+});
+
+document.getElementById('regenerateSecretCodeBtn').addEventListener('click', async () => {
+  if (!confirm('⚠️ This will generate a new secret code. Your old code will stop working. Continue?')) {
+    return;
   }
 
-  // Toggle secret code visibility
-  document.getElementById('toggleSecretCodeBtn').addEventListener('click', () => {
-    const input = document.getElementById('secretCodeDisplay');
-    const btn = document.getElementById('toggleSecretCodeBtn');
-    if (input.type === 'password') {
-      input.type = 'text';
-      btn.textContent = '🙈';
+  try {
+    const token = getToken();
+    const res = await fetch(`${API}/api/student/regenerate-secret-code`, {
+      method: 'POST',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('secretCodeInput').value = data.secretCode;
+      document.getElementById('secretCodeInput').type = 'text';
+      document.getElementById('toggleSecretCodeBtn').textContent = '🙈';
+      showMessage('✅ Secret code regenerated successfully!', 'success');
+      alert('📌 Your new secret code:\n\n' + data.secretCode + '\n\nPlease save it in a safe place!');
     } else {
-      input.type = 'password';
-      btn.textContent = '👁️';
+      showMessage(data.error || 'Failed to regenerate secret code', 'error');
     }
-  });
+  } catch (err) {
+    console.error('Regenerate error:', err);
+    showMessage('Error regenerating secret code', 'error');
+  }
+});
 
-  // Regenerate secret code
-  document.getElementById('regenerateSecretCodeBtn').addEventListener('click', async () => {
-    if (!confirm('⚠️ This will generate a new secret code. Your old code will no longer work. Continue?')) {
-      return;
+// ==================== SAVE SETTINGS ====================
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  try {
+    const token = getToken();
+    const settings = {
+      theme: document.getElementById('themeSelect').value,
+      fontSize: document.getElementById('fontSizeSelect').value,
+      notifications: document.getElementById('notificationsToggle').checked,
+      publicProfile: document.getElementById('publicProfileToggle').checked,
+      activityStatus: document.getElementById('activityStatusToggle').checked,
+      allowMessages: document.getElementById('allowMessagesToggle').checked
+    };
+
+    const res = await fetch(`${API}/api/student/settings`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify(settings)
+    });
+
+    if (res.ok) {
+      showMessage('✅ Settings saved successfully!', 'success');
+    } else {
+      showMessage('Failed to save settings', 'error');
     }
+  } catch (err) {
+    console.error('Save settings error:', err);
+    showMessage('Error saving settings', 'error');
+  }
+});
+
+// ==================== ACCOUNT ACTIONS ====================
+
+document.getElementById('changePasswordBtn').addEventListener('click', () => {
+  window.location.href = 'password-reset.html';
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    const token = getToken();
+    const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
     
-    try {
-      const token = readStoredToken();
-      const csrfRes = await fetch(`${API}/api/csrf-token`, { credentials: "include" });
-      const csrfData = await csrfRes.json();
-      
-      const res = await fetch(`${API}/api/student/regenerate-secret-code`, {
-        method: 'POST',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          "x-csrf-token": csrfData.csrfToken
-        },
-        credentials: "include"
-      });
-      
-      const data = await res.json();
-      if (data.secretCode) {
-        document.getElementById('secretCodeDisplay').value = data.secretCode;
-        document.getElementById('secretCodeDisplay').type = 'text';
-        document.getElementById('toggleSecretCodeBtn').textContent = '🙈';
-        alert('✅ Secret code regenerated successfully!\n\n📌 New Secret Code: ' + data.secretCode + '\n\nPlease save it somewhere safe!');
-      } else {
-        alert('Error regenerating secret code');
-      }
-    } catch (err) {
-      console.error("Failed to regenerate:", err);
-      alert('Error regenerating secret code');
-    }
-  });
+    await fetch(`${API}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      credentials: 'include',
+      body: JSON.stringify({ refreshToken })
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+  } finally {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+});
 
-  // Load secret code on page load
-  window.addEventListener('load', loadSecretCode);
-  </script>
+document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+  if (!confirm('⚠️ This will permanently delete your account and all data. This cannot be undone!')) {
+    return;
+  }
+  if (!confirm('Are you absolutely sure?')) {
+    return;
+  }
+
+  try {
+    const token = getToken();
+    const res = await fetch(`${API}/api/student/account`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      alert('Account deleted successfully.');
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+    } else {
+      showMessage('Failed to delete account', 'error');
+    }
+  } catch (err) {
+    console.error('Delete error:', err);
+    showMessage('Error deleting account', 'error');
+  }
+});
+
+// ==================== INIT ====================
+
+window.addEventListener('load', loadSettings);
+</script>
 
 </body>
 </html>

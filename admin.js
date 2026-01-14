@@ -1329,6 +1329,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+  
+  // Student Details Search
+  const searchStudentBtn = document.getElementById('searchStudentBtn');
+  if (searchStudentBtn) {
+    searchStudentBtn.addEventListener('click', searchStudent);
+  }
+  
+  // Allow Enter key to search
+  const searchStudentInput = document.getElementById('searchStudentInput');
+  if (searchStudentInput) {
+    searchStudentInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        searchStudent();
+      }
+    });
+  }
+  
+  // Toggle secret code button
+  const toggleSecretCodeBtn = document.getElementById('toggleSecretCodeBtn');
+  if (toggleSecretCodeBtn) {
+    toggleSecretCodeBtn.addEventListener('click', toggleSecretCodeDisplay);
+  }
 });
 
 //===============================================
@@ -1703,6 +1725,105 @@ window.checkAppealsContainer = function() {
   output.innerHTML += `Container exists: ${!!container}<br>`;
   if (container) {
     output.innerHTML += `Container HTML: ${container.innerHTML.substring(0, 200)}...<br>`;
+  }
+};
+
+//===============================================
+// 11. STUDENT DETAILS SEARCH (ADMIN)
+//===============================================
+window.searchStudent = async function searchStudent() {
+  const rollNumber = document.getElementById('searchStudentInput')?.value?.trim();
+  const container = document.getElementById('studentDetailsContainer');
+  const noResults = document.getElementById('noSearchResults');
+  
+  if (!rollNumber) {
+    alert('❌ Please enter a roll number to search');
+    return;
+  }
+  
+  try {
+    container.style.display = 'none';
+    if (noResults) noResults.style.display = 'none';
+    
+    // Fetch student details from backend
+    const res = await secureFetch(`${API}/api/admin/student/${rollNumber}`);
+    
+    if (!res.ok) {
+      if (noResults) {
+        noResults.innerHTML = `<p>❌ Student with roll number "${escapeHTML(rollNumber)}" not found.</p>`;
+        noResults.style.display = 'block';
+      } else {
+        alert('❌ Student not found');
+      }
+      return;
+    }
+    
+    const student = await res.json();
+    
+    // Populate basic details
+    document.getElementById('detailRoll').textContent = student.roll || '-';
+    document.getElementById('detailName').textContent = student.name || '-';
+    document.getElementById('detailDept').textContent = student.department || '-';
+    document.getElementById('detailClass').textContent = student.class || '-';
+    document.getElementById('detailEmail').textContent = student.email || '-';
+    document.getElementById('detailHC').textContent = student.hc || '0';
+    
+    // Get secret code from backend
+    let secretCode = 'NOT FOUND';
+    try {
+      const codeRes = await secureFetch(`${API}/api/student/secret-code`, {
+        headers: { 'Authorization': `Bearer ${getToken()}`, 'X-Requested-For': student._id }
+      });
+      if (codeRes.ok) {
+        const codeData = await codeRes.json();
+        secretCode = codeData.secretCode || 'NOT FOUND';
+      }
+    } catch (err) {
+      console.warn('Could not fetch secret code:', err);
+    }
+    
+    document.getElementById('detailSecretCode').value = secretCode;
+    
+    // Account status indicators
+    const warningsCount = student.warnings?.length || 0;
+    document.getElementById('detailWarnings').textContent = warningsCount;
+    document.getElementById('detailWarningIcon').textContent = warningsCount > 0 ? '⚠️' : '✅';
+    
+    const lockStatus = student.isLocked ? '🔒 Locked' : '🔓 Active';
+    document.getElementById('detailLockStatus').textContent = lockStatus;
+    document.getElementById('detailLockIcon').textContent = student.isLocked ? '🔒' : '🔓';
+    
+    const verifyStatus = student.isVerified ? 'Yes' : 'No';
+    const verifyIcon = student.isVerified ? '✅' : '❌';
+    const verifyColor = student.isVerified ? '#10b981' : '#ef4444';
+    document.getElementById('detailVerifyIcon').textContent = verifyIcon;
+    document.getElementById('detailVerified').textContent = verifyStatus;
+    document.getElementById('detailVerified').style.color = verifyColor;
+    
+    // Account details
+    document.getElementById('detailRole').textContent = student.role || 'student';
+    document.getElementById('detailCreated').textContent = student.createdAt ? new Date(student.createdAt).toLocaleString() : '-';
+    document.getElementById('detailUpdated').textContent = student.updatedAt ? new Date(student.updatedAt).toLocaleString() : '-';
+    
+    // Show container
+    container.style.display = 'block';
+    
+  } catch (err) {
+    console.error('[Student Search] Error:', err);
+    alert(`❌ Error searching student: ${err.message}`);
+  }
+};
+
+window.toggleSecretCodeDisplay = function toggleSecretCodeDisplay() {
+  const input = document.getElementById('detailSecretCode');
+  const button = event.target;
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    button.textContent = '👁️';
   }
 };
 
