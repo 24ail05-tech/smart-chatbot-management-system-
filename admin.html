@@ -847,6 +847,101 @@
     </div>
 
     <!-- ============================================ -->
+    <!-- STUDENT DETAILS SEARCH -->
+    <!-- ============================================ -->
+    <div id="studentSearch" class="section">
+        <h2>🔍 Student Details Search</h2>
+        <div class="card" style="background:linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.1)); border-left:4px solid #22c55e;">
+            <h3>Search & View Student Information</h3>
+            <p style="opacity:0.85;margin-bottom:15px;">Find a student and view their complete profile details</p>
+            
+            <div style="display:flex;gap:10px;margin-bottom:15px;">
+                <input type="text" id="searchStudentInput" placeholder="Enter roll number..." style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+                <button id="searchStudentBtn" style="background:#22c55e;padding:10px 20px;border:none;border-radius:8px;color:white;cursor:pointer;font-weight:600;">🔎 Search</button>
+            </div>
+
+            <div id="studentDetailsContainer" style="display:none;">
+                <div style="background:#f8f9fa;padding:20px;border-radius:12px;">
+                    <h4 style="margin-bottom:15px;color:#333;">📋 Student Profile</h4>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">
+                        <div style="background:white;padding:12px;border-radius:8px;border-left:4px solid #22c55e;">
+                            <div style="font-size:11px;color:#999;text-transform:uppercase;">Roll Number</div>
+                            <div style="font-size:16px;font-weight:600;color:#333;" id="detailRoll">-</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;border-left:4px solid #3b82f6;">
+                            <div style="font-size:11px;color:#999;text-transform:uppercase;">Name</div>
+                            <div style="font-size:16px;font-weight:600;color:#333;" id="detailName">-</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;border-left:4px solid #8b5cf6;">
+                            <div style="font-size:11px;color:#999;text-transform:uppercase;">Department</div>
+                            <div style="font-size:16px;font-weight:600;color:#333;" id="detailDept">-</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;border-left:4px solid #f59e0b;">
+                            <div style="font-size:11px;color:#999;text-transform:uppercase;">Class</div>
+                            <div style="font-size:16px;font-weight:600;color:#333;" id="detailClass">-</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;border-left:4px solid #ec4899;">
+                            <div style="font-size:11px;color:#999;text-transform:uppercase;">Email</div>
+                            <div style="font-size:14px;font-weight:600;color:#333;" id="detailEmail">-</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;border-left:4px solid #10b981;">
+                            <div style="font-size:11px;color:#999;text-transform:uppercase;">HC Balance</div>
+                            <div style="font-size:16px;font-weight:600;color:#333;" id="detailHC">0</div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-bottom:15px;color:#333;">🔐 Security Information</h4>
+                    
+                    <div style="background:white;padding:15px;border-radius:8px;border:2px solid #fbbf24;margin-bottom:15px;">
+                        <div style="font-size:13px;color:#92400e;margin-bottom:10px;">
+                            ⚠️ <strong>Secret Code (Password Recovery)</strong>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <input type="password" id="detailSecretCode" readonly style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-weight:600;letter-spacing:2px;">
+                            <button id="toggleSecretCodeBtn" style="padding:8px 12px;background:#fbbf24;color:#92400e;border:none;border-radius:8px;cursor:pointer;font-weight:600;">👁️</button>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-bottom:15px;color:#333;">⚠️ Account Status</h4>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+                        <div style="background:white;padding:12px;border-radius:8px;text-align:center;">
+                            <div style="font-size:24px;margin-bottom:5px;" id="detailWarningIcon">⚠️</div>
+                            <div style="font-size:12px;color:#999;">Warnings</div>
+                            <div style="font-size:18px;font-weight:600;color:#f59e0b;" id="detailWarnings">0</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;text-align:center;">
+                            <div style="font-size:24px;margin-bottom:5px;" id="detailLockIcon">🔓</div>
+                            <div style="font-size:12px;color:#999;">Lock Status</div>
+                            <div style="font-size:14px;font-weight:600;color:#10b981;" id="detailLockStatus">Active</div>
+                        </div>
+                        <div style="background:white;padding:12px;border-radius:8px;text-align:center;">
+                            <div style="font-size:24px;margin-bottom:5px;" id="detailVerifyIcon">❌</div>
+                            <div style="font-size:12px;color:#999;">Verified</div>
+                            <div style="font-size:14px;font-weight:600;color:#ef4444;" id="detailVerified">No</div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-bottom:15px;color:#333;">📊 Account Details</h4>
+                    
+                    <div style="background:white;padding:12px;border-radius:8px;margin-bottom:10px;">
+                        <div style="font-size:12px;color:#666;margin-bottom:8px;"><strong>Role:</strong> <span id="detailRole">student</span></div>
+                        <div style="font-size:12px;color:#666;margin-bottom:8px;"><strong>Joined:</strong> <span id="detailCreated">-</span></div>
+                        <div style="font-size:12px;color:#666;"><strong>Last Updated:</strong> <span id="detailUpdated">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="noSearchResults" style="display:none;text-align:center;padding:20px;color:#999;">
+                <p>🔍 Enter a roll number to search</p>
+            </div>
+
+            <div id="searchError" style="display:none;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:12px;border-radius:8px;margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
     <!-- 10. AUDIT LOGS -->
     <!-- ============================================ -->
     <div id="audit" class="section">
