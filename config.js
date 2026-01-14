@@ -8,7 +8,7 @@
  */
 
 // API Base URL (dynamic based on environment)
-const API_BASE_URL = window.location.origin;
+const API_BASE_URL = 'https://smart-chatbot-backend-w5tq.onrender.com';
 
 // Feature Flags - Default States
 const DEFAULT_FEATURES = {
