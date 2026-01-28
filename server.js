@@ -2477,17 +2477,75 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
         // When PDFs are disabled, use admin-provided prompt topics instead
         if (cfg.coursePlanDisabled) {
           const text = (cfg.promptTopics || '').trim();
-          if (!text) return res.status(403).json({ error: "Course topics not configured" });
+          const q = (value.message || '').trim().toLowerCase();
+
+          // Detect notice-related intents FIRST
+          const noticeIntents = [
+            /notice/i, /announcement/i, /recent.*update/i, /what.*new/i,
+            /summarize.*notice/i, /latest.*notice/i, /tell.*about.*notice/i
+          ];
+          const isNoticeQuery = noticeIntents.some(pattern => pattern.test(value.message));
+
+          if (isNoticeQuery) {
+            try {
+              const notices = await Notice.find().sort({ createdAt: -1 }).limit(5).lean();
+              if (!notices || notices.length === 0) {
+                const reply = "No notices found at the moment. Check back later for updates.";
+                const assistant = new ChatHistory({
+                  roll: value.roll,
+                  sender: "assistant",
+                  message: reply,
+                  time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                });
+                await assistant.save();
+                io.emit("chat:new", assistant);
+                return res.json({ assistantReply: reply, chat });
+              }
+
+              let reply = "Here are the recent notices:\n\n";
+              notices.forEach((n, idx) => {
+                reply += `${idx + 1}. **${n.title}** (${new Date(n.createdAt).toLocaleDateString()})\n${n.body}\n\n`;
+              });
+
+              const assistant = new ChatHistory({
+                roll: value.roll,
+                sender: "assistant",
+                message: reply,
+                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              });
+              await assistant.save();
+              io.emit("chat:new", assistant);
+              return res.json({ assistantReply: reply, chat });
+            } catch (e) {
+              console.error('Notice fetch error:', e);
+              // Continue to regular flow
+            }
+          }
+
+          // If no topics configured, return helpful message
+          if (!text) {
+            const reply = "I'm ready to help! Ask me about course topics, assignments, or notices. Administrators can configure topics in the admin panel.";
+            const assistant = new ChatHistory({
+              roll: value.roll,
+              sender: "assistant",
+              message: reply,
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            });
+            await assistant.save();
+            io.emit("chat:new", assistant);
+            return res.json({ assistantReply: reply, chat });
+          }
 
           console.log(`🎯 Using prompt topics mode with ${text.length} chars of topics`);
+          console.log(`📝 User question: "${value.message}"`);
 
-          // Use Gemini to generate answer based on prompt topics context
+          // Use Gemini to generate answer based on user's actual question
           if (value.useGemini) {
             try {
-              const context = `You are a helpful educational assistant. Answer the student's question based on these topics: ${text}`;
-              console.log(`🤖 Calling Gemini with context...`);
+              const context = `You are a helpful educational assistant. The course covers these topics: ${text}\n\nAnswer the student's question directly and concisely. If the question is not related to these topics, politely redirect them to ask about the covered material.`;
+              console.log(`🤖 Calling Gemini with user question`);
               const reply = await callGemini(value.message, { userRoll: value.roll, context });
-              console.log(`✅ Gemini response received: ${reply.slice(0, 100)}...`);
+              console.log(`✅ Gemini response: ${reply.slice(0, 100)}...`);
               const assistant = new ChatHistory({
                 roll: value.roll,
                 sender: "assistant",
@@ -2504,7 +2562,6 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
           }
 
           // Improved fallback: generate helpful answers for common topics
-          const q = (value.message || '').trim().toLowerCase();
           const topicsLower = text.toLowerCase();
           const knownDefs = {
             'data visualization': 'Data visualization is the practice of representing data in graphical forms (charts, plots, maps) to help people see patterns, trends, and outliers quickly. Effective visualization combines clear encoding (position, size, color), appropriate chart selection (bar, line, scatter, heatmap), and concise storytelling so insights are easy to understand and act on.',
@@ -2522,8 +2579,11 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
             }
           }
 
-          if (!reply) {
-            reply = `Based on your configured topics, here's what we cover: ${text.replace(/\n+/g, ' ').trim()}. Please ask a specific question about any of these topics for a detailed answer.`;
+          // Only show topic list if explicitly asked
+          if (!reply && /(what|tell|show|list).*(topic|subject|course|syllabus|cover)/i.test(value.message)) {
+            reply = `We cover the following topics in this course:\n\n${text}\n\nFeel free to ask specific questions about any of these topics!`;
+          } else if (!reply) {
+            reply = `I understand you're asking: "${value.message}"\n\nCould you rephrase or ask about specific topics? Type "show topics" to see what we cover, or ask about notices, assignments, and course content.`;
           }
 
           const assistant = new ChatHistory({
@@ -2605,21 +2665,65 @@ app.post("/api/chat", authenticate, csrfProtect, chatLimiter, async (req, res) =
       }
     }
 
-    // Fallback assistant reply (simple rule-based helper)
+    // Intelligent fallback assistant reply
     try {
-      const plans = await CoursePlan.find().sort({ uploadedAt: -1 }).limit(5).select("name");
-      const planNames = plans.map((p) => p.name).join(", ") || "no plans uploaded yet";
-
       const lower = (value.message || "").toLowerCase();
-      let reply = `I'm here to help. I currently see ${planNames}. `;
-      if (/(first|1st).*experiment|lab\s*1|exp\s*1/.test(lower)) {
-        reply += "For the first experiment details, please refer to the latest lab manual/course plan. If the manual is a PDF, ensure text is extracted when uploading so I can answer precisely.";
+      let reply;
+
+      // Check for notice-related queries first
+      const noticeIntents = [
+        /notice/i, /announcement/i, /recent.*update/i, /what.*new/i,
+        /summarize.*notice/i, /latest.*notice/i, /tell.*about.*notice/i
+      ];
+      const isNoticeQuery = noticeIntents.some(pattern => pattern.test(value.message));
+
+      if (isNoticeQuery) {
+        const notices = await Notice.find().sort({ createdAt: -1 }).limit(5).lean();
+        if (!notices || notices.length === 0) {
+          reply = "No notices found at the moment. Check back later for updates.";
+        } else {
+          reply = "Here are the recent notices:\n\n";
+          notices.forEach((n, idx) => {
+            reply += `${idx + 1}. **${n.title}** (${new Date(n.createdAt).toLocaleDateString()})\n${n.body}\n\n`;
+          });
+        }
+      } else if (/(first|1st).*experiment|lab\s*1|exp\s*1/.test(lower)) {
+        const plans = await CoursePlan.find().sort({ uploadedAt: -1 }).limit(1).select("name content");
+        if (plans.length > 0 && plans[0].content) {
+          const content = plans[0].content.toLowerCase();
+          const expMatch = content.match(/experiment\s*1[:\-]?\s*[^\n]{50,200}/i);
+          if (expMatch) {
+            reply = `From ${plans[0].name}: ${expMatch[0]}. For complete details, please refer to the uploaded course plan.`;
+          } else {
+            reply = "I found a course plan but couldn't locate the first experiment details. Please check the uploaded documents or ask your instructor.";
+          }
+        } else {
+          reply = "No course plans with experiment details are currently available. Please check with your instructor or wait for the materials to be uploaded.";
+        }
       } else if (/deadline|submission|date/.test(lower)) {
-        reply += "For deadlines, check the notices and course plan sections. If you provide the specific course/plan name, I can narrow it down.";
-      } else if (/syllabus|units?|topics?/.test(lower)) {
-        reply += "Syllabus/topics are usually inside the course plan. Please mention the course to get a focused summary.";
+        const notices = await Notice.find().sort({ createdAt: -1 }).limit(10).lean();
+        const deadlineNotices = notices.filter(n => 
+          /deadline|due|submit|submission/i.test(n.title) || /deadline|due|submit|submission/i.test(n.body)
+        );
+        if (deadlineNotices.length > 0) {
+          reply = "Here are notices mentioning deadlines:\n\n";
+          deadlineNotices.slice(0, 3).forEach((n, idx) => {
+            reply += `${idx + 1}. **${n.title}**\n${n.body}\n\n`;
+          });
+        } else {
+          reply = "No deadline information found in recent notices. Please check with your instructor or the course plan for submission dates.";
+        }
+      } else if (/syllabus|units?|topics?|course.*content|what.*learn/.test(lower)) {
+        const plans = await CoursePlan.find().sort({ uploadedAt: -1 }).limit(1).select("name content");
+        if (plans.length > 0 && plans[0].content) {
+          const snippet = plans[0].content.slice(0, 500).replace(/\s{2,}/g, ' ').trim();
+          reply = `Here's an overview from ${plans[0].name}:\n\n${snippet}...\n\nAsk me specific questions about any topic for more details!`;
+        } else {
+          reply = "Course syllabus/topics are not yet available. Please ask your instructor or wait for course materials to be uploaded.";
+        }
       } else {
-        reply += "Ask about a specific course plan or experiment to get targeted guidance.";
+        // Generic helpful response
+        reply = `I understand you're asking: "${value.message}"\n\nI can help you with:\n• Course topics and syllabus\n• Assignments and deadlines\n• Recent notices and announcements\n• Lab experiments\n\nPlease ask a specific question about any of these areas!`;
       }
 
       const assistant = new ChatHistory({
